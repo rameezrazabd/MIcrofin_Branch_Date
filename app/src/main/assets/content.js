@@ -382,7 +382,7 @@
         let btn = document.createElement('button');
         btn.id = 'bde-ghost-date-toggle';
         btn.innerHTML = '📅 Branch Dates';
-        btn.style.cssText = 'position:fixed; bottom:20px; right:20px; background:#2980b9; color:white; border:none; padding:12px 18px; border-radius:50px; font-weight:bold; font-size:14px; box-shadow:0 4px 12px rgba(0,0,0,0.35); cursor:pointer; z-index:999999; transition:0.3s;';
+        btn.style.cssText = 'position:fixed; bottom:110px; right:16px; background:#2980b9; color:white; border:none; padding:12px 18px; border-radius:50px; font-weight:bold; font-size:14px; box-shadow:0 4px 14px rgba(0,0,0,0.4); cursor:pointer; z-index:999999; transition:0.3s;';
         btn.onclick = openMainPanel;
         document.body.appendChild(btn);
     }
@@ -392,19 +392,18 @@
 
         const panel = document.createElement('div');
         panel.id = 'bde-ghost-date-panel';
-        // Updated width and responsive constraints for Android mobile screen display
-        panel.style.cssText = 'position: fixed; top: 30px; left: 50%; transform: translateX(-50%); background: #fff; border: 2px solid #2c3e50; border-radius: 8px; box-shadow: 0 10px 25px rgba(0,0,0,0.4); width: 96vw; max-width: 680px; max-height: 88vh; display:flex; flex-direction:column; font-family: Arial; z-index: 999999; overflow: hidden;';
+        panel.style.cssText = 'position: fixed; top: 15px; bottom: 80px; left: 50%; transform: translateX(-50%); background: #fff; border: 2px solid #2c3e50; border-radius: 10px; box-shadow: 0 10px 30px rgba(0,0,0,0.45); width: 96vw; max-width: 680px; display:flex; flex-direction:column; font-family: Arial; z-index: 999999; overflow: hidden;';
 
         document.body.appendChild(panel);
 
         panel.innerHTML = `
-            <div id="bde-drag-header" style="background:#2c3e50; color:white; padding:12px 15px; display:flex; justify-content:space-between; align-items:center; cursor:move;">
+            <div id="bde-drag-header" style="background:#2c3e50; color:white; padding:12px 15px; display:flex; justify-content:space-between; align-items:center; cursor:move; flex-shrink:0;">
                 <strong style="font-size:14px;">📅 Branch Date Extractor V2.8 (Mobile)</strong>
                 <button id="bde-close-date-panel" style="background:none; border:none; color:#e74c3c; font-size:18px; cursor:pointer; font-weight:bold;">✖</button>
             </div>
 
-            <div style="padding:12px; overflow-y:auto; flex:1;">
-                <div style="display:flex; gap:6px; margin-bottom:10px; align-items:flex-end; flex-wrap:wrap;">
+            <div style="padding:12px; display:flex; flex-direction:column; flex:1; overflow:hidden;">
+                <div style="display:flex; gap:6px; margin-bottom:10px; align-items:flex-end; flex-wrap:wrap; flex-shrink:0;">
                     <div style="flex:1; min-width:120px;">
                         <label style="font-size:11px; font-weight:bold;">📍 লেভেল:</label>
                         <select id="bde-ui-level" style="width:100%; padding:6px; border:1px solid #bdc3c7; border-radius:4px; margin-top:4px; font-size:12px;"></select>
@@ -418,13 +417,13 @@
                     </div>
                 </div>
 
-                <button id="bde-start-fetch-btn" style="width:100%; background:#27ae60; color:white; border:none; padding:10px; font-weight:bold; font-size:14px; border-radius:4px; cursor:pointer; margin-bottom:10px;">🚀 Fetch Dates (Auto Engine)</button>
+                <button id="bde-start-fetch-btn" style="width:100%; background:#27ae60; color:white; border:none; padding:10px; font-weight:bold; font-size:14px; border-radius:4px; cursor:pointer; margin-bottom:8px; flex-shrink:0;">🚀 Fetch Dates (Auto Engine)</button>
                 
-                <div id="bde-status-msg" style="font-size:12px; font-weight:bold; color:#d35400; text-align:center; min-height:18px;"></div>
+                <div id="bde-status-msg" style="font-size:12px; font-weight:bold; color:#d35400; text-align:center; min-height:18px; flex-shrink:0;"></div>
                 
-                <div id="bde-table-output" style="margin-top:10px; overflow-x:auto;"></div>
+                <div id="bde-table-output" style="margin-top:8px; flex:1; overflow-y:auto; overflow-x:auto; border:1px solid #eaeaea; border-radius:4px;"></div>
                 
-                <button id="bde-export-excel-btn" style="display:none; width:100%; background:#8e44ad; color:white; border:none; padding:10px; margin-top:10px; font-weight:bold; font-size:14px; border-radius:4px; cursor:pointer;">📥 Download Excel</button>
+                <button id="bde-export-excel-btn" style="display:none; width:100%; background:#8e44ad; color:white; border:none; padding:10px; margin-top:8px; font-weight:bold; font-size:14px; border-radius:4px; cursor:pointer; flex-shrink:0;">📥 Download Excel</button>
             </div>
         `;
 
@@ -539,15 +538,14 @@
         if(exportBtn) { exportBtn.style.display = 'none'; }
 
         let tableHtml = `
-            <div style="max-height: 320px; overflow-y: auto; overflow-x: auto;">
-            <table style="width:100%; border-collapse:collapse; font-size:11px; text-align:center;">
-                <thead style="position: sticky; top: 0; z-index:1;">
+            <table style="width:100%; border-collapse:collapse; font-size:12px; text-align:center;">
+                <thead style="position: sticky; top: 0; z-index:5;">
                     <tr>
-                        <th style="padding:6px 4px; border:1px solid #bdc3c7; background:#2c3e50; color:white;">Branch</th>
-                        <th style="padding:6px 4px; border:1px solid #bdc3c7; background:#2980b9; color:white;">MIS</th>
-                        <th style="padding:6px 4px; border:1px solid #bdc3c7; background:#2980b9; color:white;">Lag</th>
-                        <th style="padding:6px 4px; border:1px solid #bdc3c7; background:#27ae60; color:white;">AIS</th>
-                        <th style="padding:6px 4px; border:1px solid #bdc3c7; background:#27ae60; color:white;">Lag</th>
+                        <th style="padding:7px 5px; border:1px solid #bdc3c7; background:#2c3e50; color:white;">Branch</th>
+                        <th style="padding:7px 5px; border:1px solid #bdc3c7; background:#2980b9; color:white;">MIS</th>
+                        <th style="padding:7px 5px; border:1px solid #bdc3c7; background:#2980b9; color:white;">Lag</th>
+                        <th style="padding:7px 5px; border:1px solid #bdc3c7; background:#27ae60; color:white;">AIS</th>
+                        <th style="padding:7px 5px; border:1px solid #bdc3c7; background:#27ae60; color:white;">Lag</th>
                     </tr>
                 </thead>
         `;
@@ -557,13 +555,13 @@
             tableHtml += `
                 <tbody id="bde-tr-${safeId}">
                     <tr>
-                        <td style="text-align:left; padding:6px 4px; border:1px solid #bdc3c7; font-weight:bold;">${b.name}</td>
-                        <td colspan="4" style="padding:6px; border:1px solid #bdc3c7; color:gray;">⏳ অটো-ফেচিং চলছে...</td>
+                        <td style="text-align:left; padding:7px 5px; border:1px solid #bdc3c7; font-weight:bold;">${b.name}</td>
+                        <td colspan="4" style="padding:7px; border:1px solid #bdc3c7; color:gray;">⏳ অটো-ফেচিং চলছে...</td>
                     </tr>
                 </tbody>
             `;
         }
-        tableHtml += `</table></div>`;
+        tableHtml += `</table>`;
         output.innerHTML = tableHtml;
 
         try {
@@ -595,11 +593,11 @@
                 if (trElement) {
                     trElement.innerHTML = `
                         <tr style="${rowBg}">
-                            <td style="text-align:left; padding:6px 4px; border:1px solid #bdc3c7; font-weight:bold; color:#2c3e50;">${b.name}</td>
-                            <td style="padding:6px 4px; border:1px solid #bdc3c7; color:${misDate === 'Not Found'?'#e74c3c':'#2980b9'}; font-weight:bold; background:#f4f9f9;">${misDate}</td>
-                            <td style="padding:6px 4px; border:1px solid #bdc3c7; color:${misLagColor}; font-weight:bold; background:#f4f9f9;">${misLag}</td>
-                            <td style="padding:6px 4px; border:1px solid #bdc3c7; color:${aisDate === 'Not Found'?'#e74c3c':'#27ae60'}; font-weight:bold; background:#f9fbf9;">${aisDate}</td>
-                            <td style="padding:6px 4px; border:1px solid #bdc3c7; color:${aisLagColor}; font-weight:bold; background:#f9fbf9;">${aisLag}</td>
+                            <td style="text-align:left; padding:7px 5px; border:1px solid #bdc3c7; font-weight:bold; color:#2c3e50;">${b.name}</td>
+                            <td style="padding:7px 5px; border:1px solid #bdc3c7; color:${misDate === 'Not Found'?'#e74c3c':'#2980b9'}; font-weight:bold; background:#f4f9f9;">${misDate}</td>
+                            <td style="padding:7px 5px; border:1px solid #bdc3c7; color:${misLagColor}; font-weight:bold; background:#f4f9f9;">${misLag}</td>
+                            <td style="padding:7px 5px; border:1px solid #bdc3c7; color:${aisDate === 'Not Found'?'#e74c3c':'#27ae60'}; font-weight:bold; background:#f9fbf9;">${aisDate}</td>
+                            <td style="padding:7px 5px; border:1px solid #bdc3c7; color:${aisLagColor}; font-weight:bold; background:#f9fbf9;">${aisLag}</td>
                         </tr>
                     `;
                 }
