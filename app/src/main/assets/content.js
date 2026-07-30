@@ -460,16 +460,21 @@
                 </html>
             `;
 
-            let blob = new Blob([template], { type: 'application/vnd.ms-excel;charset=utf-8' });
-            let url = URL.createObjectURL(blob);
-            let link = document.createElement("a");
-            link.href = url;
-            link.download = `Branch_Dates_${new Date().toISOString().split('T')[0]}.xls`;
-            
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
-            URL.revokeObjectURL(url);
+            let fileName = `Branch_Dates_${new Date().toISOString().split('T')[0]}.xls`;
+
+            if (window.AndroidDownloader && window.AndroidDownloader.saveExcel) {
+                window.AndroidDownloader.saveExcel(template, fileName);
+            } else {
+                let blob = new Blob([template], { type: 'application/vnd.ms-excel;charset=utf-8' });
+                let url = URL.createObjectURL(blob);
+                let link = document.createElement("a");
+                link.href = url;
+                link.download = fileName;
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                URL.revokeObjectURL(url);
+            }
         };
 
         if (localStorage.getItem('mf_cached_branches')) {
