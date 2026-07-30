@@ -1,4 +1,60 @@
 // ========================================================================
+// 🔔 0. AUTO UPDATE NOTIFICATION SYSTEM
+// ========================================================================
+(function checkAppUpdate() {
+    const CURRENT_VERSION = "1.0"; // বর্তমান অ্যাপ ভার্সন
+    
+    // ⚠️ নিচে YOUR_USERNAME এর জায়গায় আপনার গিটহাবের আসল ইউজারনেম বসিয়ে দিন
+    const UPDATE_JSON_URL = "https://raw.githubusercontent.com/rameezrazabd/Microfin_Branch_Date/main/update.json"; 
+
+    setTimeout(() => {
+        fetch(UPDATE_JSON_URL + "?t=" + new Date().getTime())
+            .then(res => res.json())
+            .then(data => {
+                if (data && data.version && parseFloat(data.version) > parseFloat(CURRENT_VERSION)) {
+                    showUpdateModal(data);
+                }
+            })
+            .catch(err => console.log("Update check:", err));
+    }, 4000);
+
+    function showUpdateModal(data) {
+        if (document.getElementById('mf-update-modal')) return;
+        
+        const modal = document.createElement('div');
+        modal.id = 'mf-update-modal';
+        modal.style.cssText = 'position:fixed; top:0; left:0; width:100vw; height:100vh; background:rgba(0,0,0,0.7); z-index:9999999; display:flex; justify-content:center; align-items:center; font-family:Arial;';
+        
+        modal.innerHTML = `
+            <div style="background:white; width:85%; max-width:340px; border-radius:10px; padding:20px; text-align:center; box-shadow:0 10px 30px rgba(0,0,0,0.5); animation: popIn 0.3s ease;">
+                <div style="font-size:42px; margin-bottom:10px;">🚀</div>
+                <h3 style="margin:0 0 10px 0; color:#2c3e50; font-size:18px; font-weight:bold;">${data.title || 'নতুন আপডেট এসেছে!'}</h3>
+                <p style="color:#444; font-size:13px; line-height:1.5; margin-bottom:18px; text-align:left; background:#f8f9fa; padding:12px; border-radius:6px; border-left:4px solid #2980b9;">${data.message || 'অ্যাপটির একটি নতুন সংস্করণ উপলব্ধ হয়েছে। আরও উন্নত সুবিধা পেতে এখনই আপডেট করুন।'}</p>
+                
+                <button id="btn-do-update" style="width:100%; background:#27ae60; color:white; border:none; padding:12px; border-radius:5px; font-weight:bold; font-size:14px; cursor:pointer; box-shadow:0 4px 10px rgba(39,174,96,0.3); margin-bottom:8px;">📥 এখনই ডাউনলোড করুন</button>
+                
+                ${data.force_update ? '' : '<button id="btn-skip-update" style="width:100%; background:none; color:#7f8c8d; border:none; padding:8px; font-size:12px; cursor:pointer;">পরে মনে করাও</button>'}
+            </div>
+        `;
+        
+        document.body.appendChild(modal);
+        
+        document.getElementById('btn-do-update').onclick = () => {
+            if (window.AndroidDownloader && window.AndroidDownloader.openUrl) {
+                window.AndroidDownloader.openUrl(data.download_url);
+            } else {
+                window.open(data.download_url, '_blank');
+            }
+        };
+        
+        let skipBtn = document.getElementById('btn-skip-update');
+        if (skipBtn) {
+            skipBtn.onclick = () => modal.remove();
+        }
+    }
+})();
+
+// ========================================================================
 // EXTENSION 1: 📅 Branch Date Extractor V2.8 (Compact Mobile Edition)
 // ========================================================================
 (function() {
@@ -656,7 +712,7 @@
 })();
 
 // ========================================================================
-// EXTENSION 2: 🚀 Auditor Pro IT-Rameez (Compact Mobile Edition)
+// EXTENSION 2: 🚀 Auditor Pro IT-Rameez (Full Screen & Zero Digit Clip)
 // ========================================================================
 (function() {
     'use strict';
@@ -983,7 +1039,7 @@
 
         const panel = document.createElement('div');
         panel.id = 'ghost-audit-panel';
-        panel.style.cssText = 'position: fixed; top: 60px; left: 50%; transform: translateX(-50%); background: #fff; border: 2px solid #2c3e50; border-radius: 6px; box-shadow: 0 8px 20px rgba(0,0,0,0.45); width: 180px; font-family: Arial; z-index: 999998; overflow: hidden; transition: width 0.2s ease, max-width 0.2s ease;';
+        panel.style.cssText = 'position: fixed; top: 10px; left: 50%; transform: translateX(-50%); background: #fff; border: 2px solid #2c3e50; border-radius: 6px; box-shadow: 0 8px 20px rgba(0,0,0,0.45); width: 180px; font-family: Arial; z-index: 999998; overflow: hidden; transition: width 0.2s ease, max-width 0.2s ease;';
         document.body.appendChild(panel);
 
         panel.innerHTML = `
@@ -996,7 +1052,7 @@
                 </div>
             </div>
             
-            <div id="ghost-body" style="padding:6px; overflow-y:auto; max-height: 82vh; display: none;">
+            <div id="ghost-body" style="padding:6px; overflow-y:auto; max-height: 88vh; display: none;">
                 <div style="display:flex; gap:4px; margin-bottom:4px; align-items:flex-end;" id="controls-container">
                 </div>
                 <button id="start-audit-btn" style="width:100%; background:#27ae60; color:white; border:none; padding:6px; font-weight:bold; font-size:13px; border-radius:3px; cursor:pointer; transition:0.2s;">🚀 Start Audit Process</button>
@@ -1017,8 +1073,9 @@
             if (forceExpand !== null) isExpanded = !forceExpand;
             
             if (!isExpanded) {
-                panel.style.width = '97vw';
-                panel.style.maxWidth = '660px';
+                panel.style.width = '98vw';
+                panel.style.maxWidth = '750px';
+                panel.style.top = '5px';
                 body.style.display = 'block';
                 syncBtn.style.display = 'inline-block';
                 minBtn.innerText = '−';
@@ -1027,6 +1084,7 @@
             } else {
                 panel.style.width = '180px';
                 panel.style.maxWidth = '180px';
+                panel.style.top = '10px';
                 body.style.display = 'none';
                 syncBtn.style.display = 'none';
                 minBtn.innerText = '➕';
@@ -1266,8 +1324,8 @@
 
                 tbody.innerHTML = `
                     <tr>
-                        <td style="text-align:left; font-weight:bold; color:#e67e22;">${bName}</td>
-                        <td colspan="4" style="text-align:center; color:#d35400; font-size:10px;">🔄 রিট্রাই চলছে...</td>
+                        <td style="text-align:left; font-weight:bold; color:#e67e22; font-size:9.5px;">${bName}</td>
+                        <td colspan="4" style="text-align:center; color:#d35400; font-size:9.5px;">🔄 রিট্রাই চলছে...</td>
                     </tr>
                 `;
 
@@ -1283,7 +1341,7 @@
                 
                 if (mData) {
                     let t2 = document.getElementById(`tbody-${safeId}`);
-                    if(t2) t2.innerHTML = `<tr><td style="text-align:left; font-weight:bold; color:#2980b9;">${bName}</td><td colspan="4" style="text-align:center; color:#27ae60; font-size:10px;">🔄 AIS ডাটা রিড হচ্ছে...</td></tr>`;
+                    if(t2) t2.innerHTML = `<tr><td style="text-align:left; font-weight:bold; color:#2980b9; font-size:9.5px;">${bName}</td><td colspan="4" style="text-align:center; color:#27ae60; font-size:9.5px;">🔄 AIS রিড হচ্ছে...</td></tr>`;
                     
                     aData = await scrapeViaGhost('#/reports/acc-balance-sheets/balance-sheet-report-filter', sDate, '1', bId, 'ais', updateStatus);
                 }
@@ -1297,34 +1355,34 @@
                     
                     tbodyAfter.innerHTML = `
                         <tr>
-                            <td rowspan="5" style="text-align:left; font-weight:bold; color:#27ae60; vertical-align:middle; background:#f4f9f4; font-size:10px;">${bName}</td>
-                            <td style="text-align:left;"><b>Loan</b></td>
-                            <td>${formatNum(mData.loan)}</td>
-                            <td>${formatNum(aData.loan)}</td>
-                            <td style="color:${lDiff===0?'green':'red'}; font-weight:bold;">${formatNum(lDiff)}</td>
+                            <td rowspan="5" style="text-align:left; font-weight:bold; color:#27ae60; vertical-align:middle; background:#f4f9f4; font-size:9.5px;">${bName}</td>
+                            <td style="text-align:left; font-size:9px;"><b>Loan</b></td>
+                            <td style="white-space:nowrap; font-size:9px;">${formatNum(mData.loan)}</td>
+                            <td style="white-space:nowrap; font-size:9px;">${formatNum(aData.loan)}</td>
+                            <td style="color:${lDiff===0?'green':'red'}; font-weight:bold; white-space:nowrap; font-size:9px;">${formatNum(lDiff)}</td>
                         </tr>
                         <tr>
-                            <td style="text-align:left;"><b>Savings</b></td>
-                            <td>${formatNum(mData.savings)}</td>
-                            <td>${formatNum(aData.savings)}</td>
-                            <td style="color:${sDiff===0?'green':'red'}; font-weight:bold;">${formatNum(sDiff)}</td>
+                            <td style="text-align:left; font-size:9px;"><b>Savings</b></td>
+                            <td style="white-space:nowrap; font-size:9px;">${formatNum(mData.savings)}</td>
+                            <td style="white-space:nowrap; font-size:9px;">${formatNum(aData.savings)}</td>
+                            <td style="color:${sDiff===0?'green':'red'}; font-weight:bold; white-space:nowrap; font-size:9px;">${formatNum(sDiff)}</td>
                         </tr>
                         <tr style="background:#fcfcfc;">
-                            <td style="text-align:left; color:#2c3e50;"><b>Cash</b></td>
+                            <td style="text-align:left; color:#2c3e50; font-size:9px;"><b>Cash</b></td>
                             <td style="color:gray;">-</td>
-                            <td style="color:#16a085; font-weight:bold;">${formatNum(aData.cashInHand)}</td>
-                            <td style="color:gray;">-</td>
-                        </tr>
-                        <tr style="background:#fcfcfc;">
-                            <td style="text-align:left; color:#2c3e50;"><b>Bank</b></td>
-                            <td style="color:gray;">-</td>
-                            <td style="color:#16a085; font-weight:bold;">${formatNum(aData.cashAtBank)}</td>
+                            <td style="color:#16a085; font-weight:bold; white-space:nowrap; font-size:9px;">${formatNum(aData.cashInHand)}</td>
                             <td style="color:gray;">-</td>
                         </tr>
                         <tr style="background:#fcfcfc;">
-                            <td style="text-align:left; color:#2c3e50;"><b>Equity</b></td>
+                            <td style="text-align:left; color:#2c3e50; font-size:9px;"><b>Bank</b></td>
                             <td style="color:gray;">-</td>
-                            <td style="color:#8e44ad; font-weight:bold;">${formatNum(aData.equity)}</td>
+                            <td style="color:#16a085; font-weight:bold; white-space:nowrap; font-size:9px;">${formatNum(aData.cashAtBank)}</td>
+                            <td style="color:gray;">-</td>
+                        </tr>
+                        <tr style="background:#fcfcfc;">
+                            <td style="text-align:left; color:#2c3e50; font-size:9px;"><b>Equity</b></td>
+                            <td style="color:gray;">-</td>
+                            <td style="color:#8e44ad; font-weight:bold; white-space:nowrap; font-size:9px;">${formatNum(aData.equity)}</td>
                             <td style="color:gray;">-</td>
                         </tr>
                     `;
@@ -1332,10 +1390,10 @@
                 } else {
                     tbodyAfter.innerHTML = `
                         <tr>
-                            <td style="text-align:left; font-weight:bold; color:#e74c3c;">${bName}</td>
-                            <td colspan="3" style="text-align:center; color:red; font-size:10px;">❌ ব্যর্থ!</td>
+                            <td style="text-align:left; font-weight:bold; color:#e74c3c; font-size:9.5px;">${bName}</td>
+                            <td colspan="3" style="text-align:center; color:red; font-size:9.5px;">❌ ব্যর্থ!</td>
                             <td style="text-align:center;">
-                                <button class="manual-retry-btn" data-id="${bId}" data-name="${bName}" style="background:#e74c3c; color:white; border:none; padding:2px 6px; font-size:10px; border-radius:2px; cursor:pointer;">🔄 Retry</button>
+                                <button class="manual-retry-btn" data-id="${bId}" data-name="${bName}" style="background:#e74c3c; color:white; border:none; padding:2px 6px; font-size:9.5px; border-radius:2px; cursor:pointer;">🔄 Retry</button>
                             </td>
                         </tr>
                     `;
@@ -1415,9 +1473,9 @@
 
             const tableStyle = `
                 <style>
-                    .audit-table { width:100%; border-collapse:collapse; font-size:10px; text-align:right; table-layout:fixed; }
-                    .audit-table th { border: 1px solid #bdc3c7; padding: 4px 2px; text-align:center; overflow:hidden; }
-                    .audit-table td { border: 1px solid #bdc3c7; padding: 3px 2px; word-break:break-word; }
+                    .audit-table { width:100%; border-collapse:collapse; font-size:9.5px; text-align:right; table-layout:fixed; }
+                    .audit-table th { border: 1px solid #bdc3c7; padding: 3px 2px; text-align:center; overflow:hidden; }
+                    .audit-table td { border: 1px solid #bdc3c7; padding: 3px 2px; }
                     .audit-table tbody { border-bottom: 2px solid #2c3e50; }
                 </style>
             `;
@@ -1458,47 +1516,47 @@
 
                 if(finalOutput) {
                     finalOutput.innerHTML = tableStyle + `
-                        <div style="max-height:400px; overflow-y:auto;">
+                        <div style="max-height:60vh; overflow-y:auto;">
                         <table class="audit-table">
                             <thead style="background:#2c3e50; color:white; position:sticky; top:0; z-index:1;">
                                 <tr>
-                                    <th style="width:28%; text-align:left;">Branch</th>
-                                    <th style="width:18%; text-align:left;">Item</th>
-                                    <th style="width:18%;">MIS</th>
-                                    <th style="width:18%;">AIS</th>
-                                    <th style="width:18%;">Diff.</th>
+                                    <th style="width:24%; text-align:left;">Branch</th>
+                                    <th style="width:14%; text-align:left;">Item</th>
+                                    <th style="width:20%;">MIS</th>
+                                    <th style="width:20%;">AIS</th>
+                                    <th style="width:22%;">Diff.</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 <tr>
-                                    <td rowspan="5" style="text-align:left; font-weight:bold; color:#27ae60; vertical-align:middle; background:#f4f9f4; font-size:10px;">${targetName}</td>
-                                    <td style="text-align:left;"><b>Loan</b></td>
-                                    <td>${formatNum(misData.loan)}</td>
-                                    <td>${formatNum(aisData.loan)}</td>
-                                    <td style="color:${loanDiff===0?'green':'red'}; font-weight:bold;">${formatNum(loanDiff)}</td>
+                                    <td rowspan="5" style="text-align:left; font-weight:bold; color:#27ae60; vertical-align:middle; background:#f4f9f4; font-size:9.5px;">${targetName}</td>
+                                    <td style="text-align:left; font-size:9px;"><b>Loan</b></td>
+                                    <td style="white-space:nowrap; font-size:9px;">${formatNum(misData.loan)}</td>
+                                    <td style="white-space:nowrap; font-size:9px;">${formatNum(aisData.loan)}</td>
+                                    <td style="color:${loanDiff===0?'green':'red'}; font-weight:bold; white-space:nowrap; font-size:9px;">${formatNum(loanDiff)}</td>
                                 </tr>
                                 <tr>
-                                    <td style="text-align:left;"><b>Savings</b></td>
-                                    <td>${formatNum(misData.savings)}</td>
-                                    <td>${formatNum(aisData.savings)}</td>
-                                    <td style="color:${savDiff===0?'green':'red'}; font-weight:bold;">${formatNum(savDiff)}</td>
+                                    <td style="text-align:left; font-size:9px;"><b>Savings</b></td>
+                                    <td style="white-space:nowrap; font-size:9px;">${formatNum(misData.savings)}</td>
+                                    <td style="white-space:nowrap; font-size:9px;">${formatNum(aisData.savings)}</td>
+                                    <td style="color:${savDiff===0?'green':'red'}; font-weight:bold; white-space:nowrap; font-size:9px;">${formatNum(savDiff)}</td>
                                 </tr>
                                 <tr style="background:#fcfcfc;">
-                                    <td style="text-align:left; color:#2c3e50;"><b>Cash</b></td>
+                                    <td style="text-align:left; color:#2c3e50; font-size:9px;"><b>Cash</b></td>
                                     <td style="color:gray;">-</td>
-                                    <td style="color:#16a085; font-weight:bold;">${formatNum(aisData.cashInHand)}</td>
-                                    <td style="color:gray;">-</td>
-                                </tr>
-                                <tr style="background:#fcfcfc;">
-                                    <td style="text-align:left; color:#2c3e50;"><b>Bank</b></td>
-                                    <td style="color:gray;">-</td>
-                                    <td style="color:#16a085; font-weight:bold;">${formatNum(aisData.cashAtBank)}</td>
+                                    <td style="color:#16a085; font-weight:bold; white-space:nowrap; font-size:9px;">${formatNum(aisData.cashInHand)}</td>
                                     <td style="color:gray;">-</td>
                                 </tr>
                                 <tr style="background:#fcfcfc;">
-                                    <td style="text-align:left; color:#2c3e50;"><b>Equity</b></td>
+                                    <td style="text-align:left; color:#2c3e50; font-size:9px;"><b>Bank</b></td>
                                     <td style="color:gray;">-</td>
-                                    <td style="color:#8e44ad; font-weight:bold;">${formatNum(aisData.equity)}</td>
+                                    <td style="color:#16a085; font-weight:bold; white-space:nowrap; font-size:9px;">${formatNum(aisData.cashAtBank)}</td>
+                                    <td style="color:gray;">-</td>
+                                </tr>
+                                <tr style="background:#fcfcfc;">
+                                    <td style="text-align:left; color:#2c3e50; font-size:9px;"><b>Equity</b></td>
+                                    <td style="color:gray;">-</td>
+                                    <td style="color:#8e44ad; font-weight:bold; white-space:nowrap; font-size:9px;">${formatNum(aisData.equity)}</td>
                                     <td style="color:gray;">-</td>
                                 </tr>
                             </tbody>
@@ -1512,15 +1570,15 @@
             } 
             else {
                 let tableHtml = tableStyle + `
-                    <div style="max-height:400px; overflow-y:auto;">
+                    <div style="max-height:60vh; overflow-y:auto;">
                     <table class="audit-table">
                         <thead style="background:#2c3e50; color:white; position:sticky; top:0; z-index:1;">
                             <tr>
-                                <th style="width:28%; text-align:left;">Branch</th>
-                                <th style="width:18%; text-align:left;">Item</th>
-                                <th style="width:18%;">MIS</th>
-                                <th style="width:18%;">AIS</th>
-                                <th style="width:18%;">Diff.</th>
+                                <th style="width:24%; text-align:left;">Branch</th>
+                                <th style="width:14%; text-align:left;">Item</th>
+                                <th style="width:20%;">MIS</th>
+                                <th style="width:20%;">AIS</th>
+                                <th style="width:22%;">Diff.</th>
                             </tr>
                         </thead>
                 `;
@@ -1529,8 +1587,8 @@
                     tableHtml += `
                         <tbody id="tbody-${safeId}">
                             <tr style="background:#fff;">
-                                <td style="text-align:left; font-weight:bold; color:#2c3e50; font-size:10px;">${b.name}</td>
-                                <td colspan="4" style="text-align:center; color:gray; font-size:10px;">⏳ অপেক্ষমান...</td>
+                                <td style="text-align:left; font-weight:bold; color:#2c3e50; font-size:9.5px;">${b.name}</td>
+                                <td colspan="4" style="text-align:center; color:gray; font-size:9.5px;">⏳ অপেক্ষমান...</td>
                             </tr>
                         </tbody>
                     `;
@@ -1549,8 +1607,8 @@
                     if(tbodyBefore) {
                         tbodyBefore.innerHTML = `
                             <tr>
-                                <td style="text-align:left; font-weight:bold; color:#2980b9; font-size:10px;">${b.name}</td>
-                                <td colspan="4" style="text-align:center; color:#d35400; font-size:10px;">🔄 MIS রিড হচ্ছে...</td>
+                                <td style="text-align:left; font-weight:bold; color:#2980b9; font-size:9.5px;">${b.name}</td>
+                                <td colspan="4" style="text-align:center; color:#d35400; font-size:9.5px;">🔄 MIS রিড হচ্ছে...</td>
                             </tr>
                         `;
                     }
@@ -1558,7 +1616,7 @@
                     let mData = await scrapeViaGhost('#/reports/member-migration-balances/member-migration-balance-index', selectedDate, '1', b.id, 'mis', updateStatus);
                     if (!mData) {
                         let tRetry1 = document.getElementById(`tbody-${safeId}`);
-                        if(tRetry1) tRetry1.innerHTML = `<tr><td style="text-align:left; font-weight:bold; color:#e67e22; font-size:10px;">${b.name}</td><td colspan="4" style="text-align:center; color:#d35400; font-size:10px;">🔄 MIS অটো-রিট্রাই...</td></tr>`;
+                        if(tRetry1) tRetry1.innerHTML = `<tr><td style="text-align:left; font-weight:bold; color:#e67e22; font-size:9.5px;">${b.name}</td><td colspan="4" style="text-align:center; color:#d35400; font-size:9.5px;">🔄 MIS অটো-রিট্রাই...</td></tr>`;
                         
                         mData = await scrapeViaGhost('#/reports/member-migration-balances/member-migration-balance-index', selectedDate, '1', b.id, 'mis', updateStatus);
                     }
@@ -1566,12 +1624,12 @@
                     let aData = null;
                     if (mData) {
                         let tRetry2 = document.getElementById(`tbody-${safeId}`);
-                        if(tRetry2) tRetry2.innerHTML = `<tr><td style="text-align:left; font-weight:bold; color:#2980b9; font-size:10px;">${b.name}</td><td colspan="4" style="text-align:center; color:#27ae60; font-size:10px;">🔄 AIS রিড হচ্ছে...</td></tr>`;
+                        if(tRetry2) tRetry2.innerHTML = `<tr><td style="text-align:left; font-weight:bold; color:#2980b9; font-size:9.5px;">${b.name}</td><td colspan="4" style="text-align:center; color:#27ae60; font-size:9.5px;">🔄 AIS রিড হচ্ছে...</td></tr>`;
                         
                         aData = await scrapeViaGhost('#/reports/acc-balance-sheets/balance-sheet-report-filter', selectedDate, '1', b.id, 'ais', updateStatus);
                         if (!aData) {
                             let tRetry3 = document.getElementById(`tbody-${safeId}`);
-                            if(tRetry3) tRetry3.innerHTML = `<tr><td style="text-align:left; font-weight:bold; color:#e67e22; font-size:10px;">${b.name}</td><td colspan="4" style="text-align:center; color:#d35400; font-size:10px;">🔄 AIS অটো-রিট্রাই...</td></tr>`;
+                            if(tRetry3) tRetry3.innerHTML = `<tr><td style="text-align:left; font-weight:bold; color:#e67e22; font-size:9.5px;">${b.name}</td><td colspan="4" style="text-align:center; color:#d35400; font-size:9.5px;">🔄 AIS অটো-রিট্রাই...</td></tr>`;
                             
                             aData = await scrapeViaGhost('#/reports/acc-balance-sheets/balance-sheet-report-filter', selectedDate, '1', b.id, 'ais', updateStatus);
                         }
@@ -1586,34 +1644,34 @@
                         
                         tbodyAfter.innerHTML = `
                             <tr>
-                                <td rowspan="5" style="text-align:left; font-weight:bold; color:#27ae60; vertical-align:middle; background:#f4f9f4; font-size:10px;">${b.name}</td>
-                                <td style="text-align:left;"><b>Loan</b></td>
-                                <td>${formatNum(mData.loan)}</td>
-                                <td>${formatNum(aData.loan)}</td>
-                                <td style="color:${lDiff===0?'green':'red'}; font-weight:bold;">${formatNum(lDiff)}</td>
+                                <td rowspan="5" style="text-align:left; font-weight:bold; color:#27ae60; vertical-align:middle; background:#f4f9f4; font-size:9.5px;">${b.name}</td>
+                                <td style="text-align:left; font-size:9px;"><b>Loan</b></td>
+                                <td style="white-space:nowrap; font-size:9px;">${formatNum(mData.loan)}</td>
+                                <td style="white-space:nowrap; font-size:9px;">${formatNum(aData.loan)}</td>
+                                <td style="color:${lDiff===0?'green':'red'}; font-weight:bold; white-space:nowrap; font-size:9px;">${formatNum(lDiff)}</td>
                             </tr>
                             <tr>
-                                <td style="text-align:left;"><b>Savings</b></td>
-                                <td>${formatNum(mData.savings)}</td>
-                                <td>${formatNum(aData.savings)}</td>
-                                <td style="color:${sDiff===0?'green':'red'}; font-weight:bold;">${formatNum(sDiff)}</td>
+                                <td style="text-align:left; font-size:9px;"><b>Savings</b></td>
+                                <td style="white-space:nowrap; font-size:9px;">${formatNum(mData.savings)}</td>
+                                <td style="white-space:nowrap; font-size:9px;">${formatNum(aData.savings)}</td>
+                                <td style="color:${sDiff===0?'green':'red'}; font-weight:bold; white-space:nowrap; font-size:9px;">${formatNum(sDiff)}</td>
                             </tr>
                             <tr style="background:#fcfcfc;">
-                                <td style="text-align:left; color:#2c3e50;"><b>Cash</b></td>
+                                <td style="text-align:left; color:#2c3e50; font-size:9px;"><b>Cash</b></td>
                                 <td style="color:gray;">-</td>
-                                <td style="color:#16a085; font-weight:bold;">${formatNum(aData.cashInHand)}</td>
-                                <td style="color:gray;">-</td>
-                            </tr>
-                            <tr style="background:#fcfcfc;">
-                                <td style="text-align:left; color:#2c3e50;"><b>Bank</b></td>
-                                <td style="color:gray;">-</td>
-                                <td style="color:#16a085; font-weight:bold;">${formatNum(aData.cashAtBank)}</td>
+                                <td style="color:#16a085; font-weight:bold; white-space:nowrap; font-size:9px;">${formatNum(aData.cashInHand)}</td>
                                 <td style="color:gray;">-</td>
                             </tr>
                             <tr style="background:#fcfcfc;">
-                                <td style="text-align:left; color:#2c3e50;"><b>Equity</b></td>
+                                <td style="text-align:left; color:#2c3e50; font-size:9px;"><b>Bank</b></td>
                                 <td style="color:gray;">-</td>
-                                <td style="color:#8e44ad; font-weight:bold;">${formatNum(aData.equity)}</td>
+                                <td style="color:#16a085; font-weight:bold; white-space:nowrap; font-size:9px;">${formatNum(aData.cashAtBank)}</td>
+                                <td style="color:gray;">-</td>
+                            </tr>
+                            <tr style="background:#fcfcfc;">
+                                <td style="text-align:left; color:#2c3e50; font-size:9px;"><b>Equity</b></td>
+                                <td style="color:gray;">-</td>
+                                <td style="color:#8e44ad; font-weight:bold; white-space:nowrap; font-size:9px;">${formatNum(aData.equity)}</td>
                                 <td style="color:gray;">-</td>
                             </tr>
                         `;
@@ -1621,10 +1679,10 @@
                     } else {
                         tbodyAfter.innerHTML = `
                             <tr>
-                                <td style="text-align:left; font-weight:bold; color:#e74c3c; font-size:10px;">${b.name}</td>
-                                <td colspan="3" style="text-align:center; color:red; font-size:10px;">❌ ডাটা নেই</td>
+                                <td style="text-align:left; font-weight:bold; color:#e74c3c; font-size:9.5px;">${b.name}</td>
+                                <td colspan="3" style="text-align:center; color:red; font-size:9.5px;">❌ ডাটা নেই</td>
                                 <td style="text-align:center; vertical-align:middle;">
-                                    <button class="manual-retry-btn" data-id="${b.id}" data-name="${b.name}" style="background:#e74c3c; color:white; border:none; padding:2px 6px; font-size:10px; border-radius:2px; cursor:pointer; font-weight:bold;">🔄 Retry</button>
+                                    <button class="manual-retry-btn" data-id="${b.id}" data-name="${b.name}" style="background:#e74c3c; color:white; border:none; padding:2px 6px; font-size:9.5px; border-radius:2px; cursor:pointer; font-weight:bold;">🔄 Retry</button>
                                 </td>
                             </tr>
                         `;
