@@ -1,5 +1,5 @@
 // ========================================================================
-// EXTENSION 1: 📅 Branch Date Extractor V2.8 (Mobile)
+// EXTENSION 1: 📅 Branch Date Extractor V2.8 (Compact Mobile Edition)
 // ========================================================================
 (function() {
     'use strict';
@@ -356,8 +356,8 @@
 
         const overlay = document.createElement('div');
         overlay.id = 'sync-overlay';
-        overlay.style.cssText = 'position:fixed; top:15px; right:15px; background:#f39c12; color:white; padding:10px 15px; z-index:99999; border-radius:6px; font-size:12px; font-weight:bold; box-shadow: 0 4px 8px rgba(0,0,0,0.3);';
-        overlay.innerHTML = '⚙️ Analyzing User Role & Hierarchy...';
+        overlay.style.cssText = 'position:fixed; top:15px; right:15px; background:#f39c12; color:white; padding:8px 12px; z-index:99999; border-radius:4px; font-size:11px; font-weight:bold; box-shadow: 0 4px 8px rgba(0,0,0,0.3);';
+        overlay.innerHTML = '⚙️ Auto Syncing...';
         document.body.appendChild(overlay);
 
         syncLocations((msg) => {
@@ -369,7 +369,7 @@
             if(ov) {
                 if(success) {
                     ov.style.background = '#27ae60';
-                    ov.innerHTML = '✅ Synced Successfully!';
+                    ov.innerHTML = '✅ Synced!';
                 } else {
                     ov.style.background = '#e74c3c';
                     ov.innerHTML = '❌ Sync Failed!';
@@ -385,7 +385,7 @@
         let btn = document.createElement('button');
         btn.id = 'bde-ghost-date-toggle';
         btn.innerHTML = '📅 Branch Dates';
-        btn.style.cssText = 'position:fixed; bottom:110px; right:16px; background:#2980b9; color:white; border:none; padding:12px 18px; border-radius:50px; font-weight:bold; font-size:14px; box-shadow:0 4px 14px rgba(0,0,0,0.4); cursor:pointer; z-index:999999; transition:0.3s;';
+        btn.style.cssText = 'position:fixed; bottom:110px; right:16px; background:#2980b9; color:white; border:none; padding:10px 15px; border-radius:50px; font-weight:bold; font-size:13px; box-shadow:0 4px 14px rgba(0,0,0,0.4); cursor:pointer; z-index:999999; transition:0.3s;';
         btn.onclick = openMainPanel;
         document.body.appendChild(btn);
     }
@@ -395,38 +395,38 @@
 
         const panel = document.createElement('div');
         panel.id = 'bde-ghost-date-panel';
-        panel.style.cssText = 'position: fixed; top: 15px; bottom: 80px; left: 50%; transform: translateX(-50%); background: #fff; border: 2px solid #2c3e50; border-radius: 10px; box-shadow: 0 10px 30px rgba(0,0,0,0.45); width: 96vw; max-width: 680px; display:flex; flex-direction:column; font-family: Arial; z-index: 999999; overflow: hidden;';
+        panel.style.cssText = 'position: fixed; top: 10px; bottom: 70px; left: 50%; transform: translateX(-50%); background: #fff; border: 2px solid #2c3e50; border-radius: 8px; box-shadow: 0 10px 30px rgba(0,0,0,0.45); width: 97vw; max-width: 680px; display:flex; flex-direction:column; font-family: Arial; z-index: 999999; overflow: hidden;';
 
         document.body.appendChild(panel);
 
         panel.innerHTML = `
-            <div id="bde-drag-header" style="background:#2c3e50; color:white; padding:12px 15px; display:flex; justify-content:space-between; align-items:center; cursor:move; flex-shrink:0;">
-                <strong style="font-size:14px;">📅 Branch Date Extractor V2.8 (Mobile)</strong>
-                <button id="bde-close-date-panel" style="background:none; border:none; color:#e74c3c; font-size:18px; cursor:pointer; font-weight:bold;">✖</button>
+            <div id="bde-drag-header" style="background:#2c3e50; color:white; padding:8px 12px; display:flex; justify-content:space-between; align-items:center; cursor:move; flex-shrink:0;">
+                <strong style="font-size:13px;">📅 Branch Date Extractor</strong>
+                <button id="bde-close-date-panel" style="background:none; border:none; color:#e74c3c; font-size:16px; cursor:pointer; font-weight:bold;">✖</button>
             </div>
 
-            <div style="padding:12px; display:flex; flex-direction:column; flex:1; overflow:hidden;">
-                <div style="display:flex; gap:6px; margin-bottom:10px; align-items:flex-end; flex-wrap:wrap; flex-shrink:0;">
-                    <div style="flex:1; min-width:120px;">
-                        <label style="font-size:11px; font-weight:bold;">📍 লেভেল:</label>
-                        <select id="bde-ui-level" style="width:100%; padding:6px; border:1px solid #bdc3c7; border-radius:4px; margin-top:4px; font-size:12px;"></select>
+            <div style="padding:6px; display:flex; flex-direction:column; flex:1; overflow:hidden;">
+                <div style="display:flex; gap:4px; margin-bottom:4px; align-items:flex-end; flex-shrink:0;">
+                    <div style="flex:1;">
+                        <label style="font-size:10px; font-weight:bold; color:#555;">📍 লেভেল:</label>
+                        <select id="bde-ui-level" style="width:100%; padding:3px; border:1px solid #bdc3c7; border-radius:3px; font-size:11px; height:24px;"></select>
                     </div>
-                    <div style="flex:1; min-width:140px;">
-                        <label style="font-size:11px; font-weight:bold;">🏢 নির্বাচন করুন:</label>
-                        <select id="bde-ui-target" style="width:100%; padding:6px; border:1px solid #bdc3c7; border-radius:4px; margin-top:4px; font-size:12px;"></select>
+                    <div style="flex:1.6;">
+                        <label style="font-size:10px; font-weight:bold; color:#555;">🏢 নির্বাচন করুন:</label>
+                        <select id="bde-ui-target" style="width:100%; padding:3px; border:1px solid #bdc3c7; border-radius:3px; font-size:11px; height:24px;"></select>
                     </div>
                     <div>
-                        <button id="bde-sync-btn" style="height:31px; width:35px; background:#bdc3c7; color:#2c3e50; border:none; border-radius:4px; cursor:pointer; font-weight:bold; font-size:13px;" title="ম্যানুয়াল সিঙ্ক">🔄</button>
+                        <button id="bde-sync-btn" style="height:24px; width:28px; background:#bdc3c7; color:#2c3e50; border:none; border-radius:3px; cursor:pointer; font-weight:bold; font-size:12px;" title="সিঙ্ক">🔄</button>
                     </div>
                 </div>
 
-                <button id="bde-start-fetch-btn" style="width:100%; background:#27ae60; color:white; border:none; padding:10px; font-weight:bold; font-size:14px; border-radius:4px; cursor:pointer; margin-bottom:8px; flex-shrink:0;">🚀 Fetch Dates (Auto Engine)</button>
+                <button id="bde-start-fetch-btn" style="width:100%; background:#27ae60; color:white; border:none; padding:6px; font-weight:bold; font-size:13px; border-radius:4px; cursor:pointer; margin-bottom:4px; flex-shrink:0;">🚀 Fetch Dates (Auto Engine)</button>
                 
-                <div id="bde-status-msg" style="font-size:12px; font-weight:bold; color:#d35400; text-align:center; min-height:18px; flex-shrink:0;"></div>
+                <div id="bde-status-msg" style="font-size:11px; font-weight:bold; color:#d35400; text-align:center; min-height:16px; flex-shrink:0;"></div>
                 
-                <div id="bde-table-output" style="margin-top:8px; flex:1; overflow-y:auto; overflow-x:auto; border:1px solid #eaeaea; border-radius:4px;"></div>
+                <div id="bde-table-output" style="margin-top:4px; flex:1; overflow-y:auto; border:1px solid #eaeaea; border-radius:4px;"></div>
                 
-                <button id="bde-export-excel-btn" style="display:none; width:100%; background:#8e44ad; color:white; border:none; padding:10px; margin-top:8px; font-weight:bold; font-size:14px; border-radius:4px; cursor:pointer; flex-shrink:0;">📥 Download Excel</button>
+                <button id="bde-export-excel-btn" style="display:none; width:100%; background:#8e44ad; color:white; border:none; padding:6px; margin-top:4px; font-weight:bold; font-size:13px; border-radius:4px; cursor:pointer; flex-shrink:0;">📥 Download Excel</button>
             </div>
         `;
 
@@ -546,14 +546,14 @@
         if(exportBtn) { exportBtn.style.display = 'none'; }
 
         let tableHtml = `
-            <table style="width:100%; border-collapse:collapse; font-size:12px; text-align:center;">
+            <table style="width:100%; border-collapse:collapse; font-size:10.5px; text-align:center; table-layout:fixed;">
                 <thead style="position: sticky; top: 0; z-index:5;">
                     <tr>
-                        <th style="padding:7px 5px; border:1px solid #bdc3c7; background:#2c3e50; color:white;">Branch</th>
-                        <th style="padding:7px 5px; border:1px solid #bdc3c7; background:#2980b9; color:white;">MIS</th>
-                        <th style="padding:7px 5px; border:1px solid #bdc3c7; background:#2980b9; color:white;">Lag</th>
-                        <th style="padding:7px 5px; border:1px solid #bdc3c7; background:#27ae60; color:white;">AIS</th>
-                        <th style="padding:7px 5px; border:1px solid #bdc3c7; background:#27ae60; color:white;">Lag</th>
+                        <th style="padding:4px 2px; border:1px solid #bdc3c7; background:#2c3e50; color:white; width:34%;">Branch</th>
+                        <th style="padding:4px 2px; border:1px solid #bdc3c7; background:#2980b9; color:white; width:21%;">MIS</th>
+                        <th style="padding:4px 1px; border:1px solid #bdc3c7; background:#2980b9; color:white; width:12%;">Lag</th>
+                        <th style="padding:4px 2px; border:1px solid #bdc3c7; background:#27ae60; color:white; width:21%;">AIS</th>
+                        <th style="padding:4px 1px; border:1px solid #bdc3c7; background:#27ae60; color:white; width:12%;">Lag</th>
                     </tr>
                 </thead>
         `;
@@ -563,8 +563,8 @@
             tableHtml += `
                 <tbody id="bde-tr-${safeId}">
                     <tr>
-                        <td style="text-align:left; padding:7px 5px; border:1px solid #bdc3c7; font-weight:bold;">${b.name}</td>
-                        <td colspan="4" style="padding:7px; border:1px solid #bdc3c7; color:gray;">⏳ অটো-ফেচিং চলছে...</td>
+                        <td style="text-align:left; padding:4px 2px; border:1px solid #bdc3c7; font-weight:bold; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${b.name}</td>
+                        <td colspan="4" style="padding:4px 2px; border:1px solid #bdc3c7; color:gray; font-size:10px;">⏳ ফেচিং...</td>
                     </tr>
                 </tbody>
             `;
@@ -573,18 +573,18 @@
         output.innerHTML = tableHtml;
 
         try {
-            if(statusElement) statusElement.innerHTML = `<span style="color:#2980b9;">⏳ MIS ডাটা ব্যাকগ্রাউন্ডে স্ক্র্যাপ হচ্ছে...</span>`;
+            if(statusElement) statusElement.innerHTML = `<span style="color:#2980b9;">⏳ MIS ডাটা স্ক্র্যাপ হচ্ছে...</span>`;
             let misDataMap = await fetchDatesViaInvisibleFrame('MIS', level, targetId, branchesToProcess);
 
-            if(statusElement) statusElement.innerHTML = `<span style="color:#2980b9;">⏳ AIS ডাটা ব্যাকগ্রাউন্ডে স্ক্র্যাপ হচ্ছে...</span>`;
+            if(statusElement) statusElement.innerHTML = `<span style="color:#2980b9;">⏳ AIS ডাটা স্ক্র্যাপ হচ্ছে...</span>`;
             let aisDataMap = await fetchDatesViaInvisibleFrame('AIS', level, targetId, branchesToProcess);
 
             for (let b of branchesToProcess) {
                 let bCodeMatch = b.name.match(/(?:^|-|\s)(\d{3,4})(?:$|-|\s)/);
                 let bCode = bCodeMatch ? bCodeMatch[1] : b.name.replace(/[^a-z]/gi, '').toLowerCase();
 
-                let aisDate = aisDataMap[bCode] || "Not Found";
-                let misDate = misDataMap[bCode] || "Not Found";
+                let aisDate = aisDataMap[bCode] || "N/A";
+                let misDate = misDataMap[bCode] || "N/A";
 
                 let aisLag = calculateLag(aisDate);
                 let misLag = calculateLag(misDate);
@@ -592,7 +592,7 @@
                 let aisLagColor = aisLag > 2 ? '#c0392b' : (aisLag > 0 ? '#d35400' : '#27ae60');
                 let misLagColor = misLag > 2 ? '#c0392b' : (misLag > 0 ? '#d35400' : '#27ae60');
 
-                let isMismatch = (misDate !== "Not Found" && aisDate !== "Not Found" && misDate !== aisDate);
+                let isMismatch = (misDate !== "N/A" && aisDate !== "N/A" && misDate !== aisDate);
                 let rowBg = isMismatch ? "background:#fdedec;" : "";
 
                 let safeId = b.id.toString().replace(/[^a-zA-Z0-9]/g, '');
@@ -601,21 +601,21 @@
                 if (trElement) {
                     trElement.innerHTML = `
                         <tr style="${rowBg}">
-                            <td style="text-align:left; padding:7px 5px; border:1px solid #bdc3c7; font-weight:bold; color:#2c3e50;">${b.name}</td>
-                            <td style="padding:7px 5px; border:1px solid #bdc3c7; color:${misDate === 'Not Found'?'#e74c3c':'#2980b9'}; font-weight:bold; background:#f4f9f9;">${misDate}</td>
-                            <td style="padding:7px 5px; border:1px solid #bdc3c7; color:${misLagColor}; font-weight:bold; background:#f4f9f9;">${misLag}</td>
-                            <td style="padding:7px 5px; border:1px solid #bdc3c7; color:${aisDate === 'Not Found'?'#e74c3c':'#27ae60'}; font-weight:bold; background:#f9fbf9;">${aisDate}</td>
-                            <td style="padding:7px 5px; border:1px solid #bdc3c7; color:${aisLagColor}; font-weight:bold; background:#f9fbf9;">${aisLag}</td>
+                            <td style="text-align:left; padding:4px 2px; border:1px solid #bdc3c7; font-weight:bold; color:#2c3e50; word-break:break-word; font-size:10px;">${b.name}</td>
+                            <td style="padding:4px 1px; border:1px solid #bdc3c7; color:${misDate === 'N/A'?'#e74c3c':'#2980b9'}; font-weight:bold; background:#f4f9f9; font-size:10px;">${misDate}</td>
+                            <td style="padding:4px 1px; border:1px solid #bdc3c7; color:${misLagColor}; font-weight:bold; background:#f4f9f9;">${misLag}</td>
+                            <td style="padding:4px 1px; border:1px solid #bdc3c7; color:${aisDate === 'N/A'?'#e74c3c':'#27ae60'}; font-weight:bold; background:#f9fbf9; font-size:10px;">${aisDate}</td>
+                            <td style="padding:4px 1px; border:1px solid #bdc3c7; color:${aisLagColor}; font-weight:bold; background:#f9fbf9;">${aisLag}</td>
                         </tr>
                     `;
                 }
             }
 
-            if(statusElement) statusElement.innerHTML = `<span style="color:green;">✅ সব শাখার ডেট ও Lag সফলভাবে স্ক্যান করা হয়েছে!</span>`;
+            if(statusElement) statusElement.innerHTML = `<span style="color:green;">✅ সব শাখার ডেট ও Lag স্ক্যান সম্পন্ন!</span>`;
             
         } catch(e) {
             console.error(e);
-            if(statusElement) statusElement.innerHTML = `<span style="color:red;">❌ স্ক্যানিংয়ে একটি সমস্যা হয়েছে!</span>`;
+            if(statusElement) statusElement.innerHTML = `<span style="color:red;">❌ স্ক্যানিংয়ে সমস্যা হয়েছে!</span>`;
         } finally {
             let finalStartBtn = document.getElementById('bde-start-fetch-btn');
             let finalExportBtn = document.getElementById('bde-export-excel-btn');
@@ -656,7 +656,7 @@
 })();
 
 // ========================================================================
-// EXTENSION 2: 🚀 Auditor Pro IT-Rameez (Mobile & PC)
+// EXTENSION 2: 🚀 Auditor Pro IT-Rameez (Compact Mobile Edition)
 // ========================================================================
 (function() {
     'use strict';
@@ -983,26 +983,26 @@
 
         const panel = document.createElement('div');
         panel.id = 'ghost-audit-panel';
-        panel.style.cssText = 'position: fixed; top: 75px; left: 50%; transform: translateX(-50%); background: #fff; border: 2px solid #2c3e50; border-radius: 8px; box-shadow: 0 10px 25px rgba(0,0,0,0.45); width: 190px; font-family: Arial; z-index: 999998; overflow: hidden; transition: width 0.3s ease, max-width 0.3s ease;';
+        panel.style.cssText = 'position: fixed; top: 60px; left: 50%; transform: translateX(-50%); background: #fff; border: 2px solid #2c3e50; border-radius: 6px; box-shadow: 0 8px 20px rgba(0,0,0,0.45); width: 180px; font-family: Arial; z-index: 999998; overflow: hidden; transition: width 0.2s ease, max-width 0.2s ease;';
         document.body.appendChild(panel);
 
         panel.innerHTML = `
-            <div id="ghost-header" style="background:#2c3e50; color:white; padding:10px 12px; cursor:move; display:flex; justify-content:space-between; align-items:center;">
-                <strong id="panel-title" style="font-size:13px; pointer-events:none; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">🚀 Auditor Pro-IT Rameez</strong>
-                <div style="display:flex; align-items:center; gap:5px;">
-                    <button id="sync-locations-btn" style="display:none; background:#f39c12; border:none; color:white; font-size:11px; cursor:pointer; padding:3px 6px; border-radius:3px; font-weight:bold; white-space:nowrap;">🔄 Sync</button>
-                    <button id="ghost-min" style="background:none; border:none; color:white; font-size:16px; cursor:pointer; padding:0 3px; font-weight:bold;">➕</button>
-                    <button id="ghost-close" style="background:none; border:none; color:#e74c3c; font-size:14px; cursor:pointer; padding:0 3px;">✖</button>
+            <div id="ghost-header" style="background:#2c3e50; color:white; padding:8px 10px; cursor:move; display:flex; justify-content:space-between; align-items:center;">
+                <strong id="panel-title" style="font-size:12px; pointer-events:none; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">🚀 Auditor Pro</strong>
+                <div style="display:flex; align-items:center; gap:4px;">
+                    <button id="sync-locations-btn" style="display:none; background:#f39c12; border:none; color:white; font-size:10px; cursor:pointer; padding:2px 5px; border-radius:2px; font-weight:bold;">🔄 Sync</button>
+                    <button id="ghost-min" style="background:none; border:none; color:white; font-size:15px; cursor:pointer; padding:0 2px; font-weight:bold;">➕</button>
+                    <button id="ghost-close" style="background:none; border:none; color:#e74c3c; font-size:13px; cursor:pointer; padding:0 2px;">✖</button>
                 </div>
             </div>
             
-            <div id="ghost-body" style="padding:12px; overflow-y:auto; max-height: 80vh; display: none;">
-                <div style="display:flex; gap:8px; margin-bottom:12px; align-items:flex-end; flex-wrap:wrap;" id="controls-container">
+            <div id="ghost-body" style="padding:6px; overflow-y:auto; max-height: 82vh; display: none;">
+                <div style="display:flex; gap:4px; margin-bottom:4px; align-items:flex-end;" id="controls-container">
                 </div>
-                <button id="start-audit-btn" style="width:100%; background:#27ae60; color:white; border:none; padding:10px; font-weight:bold; font-size:14px; border-radius:4px; cursor:pointer; transition:0.3s;">🚀 Start Audit Process</button>
-                <div id="audit-status" style="margin-top:10px; font-size:12px; font-weight:bold; color:#d35400; text-align:center; min-height:16px;"></div>
-                <div id="audit-output" style="margin-top:10px;"></div>
-                <button id="export-excel-btn" style="display:none; width:100%; background:#8e44ad; color:white; border:none; padding:10px; margin-top:10px; font-weight:bold; font-size:14px; border-radius:4px; cursor:pointer; transition:0.3s;">📥 Download Excel</button>
+                <button id="start-audit-btn" style="width:100%; background:#27ae60; color:white; border:none; padding:6px; font-weight:bold; font-size:13px; border-radius:3px; cursor:pointer; transition:0.2s;">🚀 Start Audit Process</button>
+                <div id="audit-status" style="margin-top:4px; font-size:11px; font-weight:bold; color:#d35400; text-align:center; min-height:15px;"></div>
+                <div id="audit-output" style="margin-top:4px;"></div>
+                <button id="export-excel-btn" style="display:none; width:100%; background:#8e44ad; color:white; border:none; padding:6px; margin-top:4px; font-weight:bold; font-size:13px; border-radius:3px; cursor:pointer; transition:0.2s;">📥 Download Excel</button>
             </div>
         `;
 
@@ -1017,18 +1017,16 @@
             if (forceExpand !== null) isExpanded = !forceExpand;
             
             if (!isExpanded) {
-                // Expand (Mobile optimized size)
-                panel.style.width = '94vw';
-                panel.style.maxWidth = '640px';
+                panel.style.width = '97vw';
+                panel.style.maxWidth = '660px';
                 body.style.display = 'block';
                 syncBtn.style.display = 'inline-block';
                 minBtn.innerText = '−';
                 title.innerText = "🚀 Auditor Pro IT-Rameez";
                 isExpanded = true;
             } else {
-                // Minimize
-                panel.style.width = '190px';
-                panel.style.maxWidth = '190px';
+                panel.style.width = '180px';
+                panel.style.maxWidth = '180px';
                 body.style.display = 'none';
                 syncBtn.style.display = 'none';
                 minBtn.innerText = '➕';
@@ -1036,7 +1034,7 @@
                 let uType = localStorage.getItem('mf_user_type');
                 if(uType === 'BRANCH') title.innerText = "🚀 Branch Pro";
                 else if(uType === 'AREA') title.innerText = "🚀 Area Pro";
-                else title.innerText = "🚀 Auditor Pro IT-Rameez";
+                else title.innerText = "🚀 Auditor Pro";
                 
                 isExpanded = false;
             }
@@ -1049,9 +1047,9 @@
             let uType = localStorage.getItem('mf_user_type');
             let container = document.getElementById('controls-container');
             let dateHtml = `
-                <div style="flex:1; min-width:130px;">
-                    <label style="font-size:11px; font-weight:bold; color:#34495e;">📅 রিপোর্ট তারিখ:</label>
-                    <input type="date" id="custom-audit-date" style="width:100%; padding:6px; border:1px solid #bdc3c7; border-radius:4px; font-family:Arial; cursor:pointer; margin-top:4px; font-size:12px;" value="${getToday()}">
+                <div style="flex:1;">
+                    <label style="font-size:10px; font-weight:bold; color:#34495e;">📅 তারিখ:</label>
+                    <input type="date" id="custom-audit-date" style="width:100%; padding:3px; border:1px solid #bdc3c7; border-radius:3px; font-family:Arial; cursor:pointer; font-size:11px; height:24px;" value="${getToday()}">
                 </div>
             `;
 
@@ -1062,10 +1060,10 @@
             else if (uType === 'AREA') {
                 document.getElementById('panel-title').innerText = isExpanded ? "🚀 Area Auditor Pro" : "🚀 Area Pro";
                 container.innerHTML = `
-                    <div style="flex:2; min-width:150px;">
-                        <label style="font-size:11px; font-weight:bold; color:#34495e;">🏢 নির্বাচন করুন:</label>
-                        <select id="custom-target" style="width:100%; padding:6px; border:1px solid #bdc3c7; border-radius:4px; margin-top:4px; font-size:12px;">
-                            <option value="ALL">-- 🚀 Run All Branches (Batch) --</option>
+                    <div style="flex:1.5;">
+                        <label style="font-size:10px; font-weight:bold; color:#34495e;">🏢 নির্বাচন:</label>
+                        <select id="custom-target" style="width:100%; padding:3px; border:1px solid #bdc3c7; border-radius:3px; font-size:11px; height:24px;">
+                            <option value="ALL">-- 🚀 All Branches (Batch) --</option>
                         </select>
                     </div>
                     ${dateHtml}
@@ -1076,23 +1074,23 @@
                 let zones = JSON.parse(localStorage.getItem('mf_cached_zones') || '[]');
                 let areas = JSON.parse(localStorage.getItem('mf_cached_areas') || '[]');
                 
-                let levelOptions = `<option value="1">শাখা (Branch)</option>`;
-                if (areas.length > 0) levelOptions += `<option value="2">অঞ্চল (Area)</option>`;
-                if (zones.length > 0) levelOptions += `<option value="3" selected>জোন (Zone)</option>`;
+                let levelOptions = `<option value="1">শাখা</option>`;
+                if (areas.length > 0) levelOptions += `<option value="2">অঞ্চল</option>`;
+                if (zones.length > 0) levelOptions += `<option value="3" selected>জোন</option>`;
                 else if (areas.length > 0) levelOptions = levelOptions.replace('value="2"', 'value="2" selected');
                 else levelOptions = levelOptions.replace('value="1"', 'value="1" selected');
 
                 document.getElementById('panel-title').innerText = "🚀 Auditor Pro IT-Rameez";
                 container.innerHTML = `
-                    <div style="flex:1; min-width:110px;">
-                        <label style="font-size:11px; font-weight:bold; color:#34495e;">📍 লেভেল:</label>
-                        <select id="custom-level" style="width:100%; padding:6px; border:1px solid #bdc3c7; border-radius:4px; margin-top:4px; font-size:12px;">
+                    <div style="flex:0.8;">
+                        <label style="font-size:10px; font-weight:bold; color:#34495e;">📍 লেভেল:</label>
+                        <select id="custom-level" style="width:100%; padding:3px; border:1px solid #bdc3c7; border-radius:3px; font-size:11px; height:24px;">
                             ${levelOptions}
                         </select>
                     </div>
-                    <div style="flex:1.5; min-width:140px;">
-                        <label style="font-size:11px; font-weight:bold; color:#34495e;">🏢 নির্বাচন করুন:</label>
-                        <select id="custom-target" style="width:100%; padding:6px; border:1px solid #bdc3c7; border-radius:4px; margin-top:4px; font-size:12px;">
+                    <div style="flex:1.4;">
+                        <label style="font-size:10px; font-weight:bold; color:#34495e;">🏢 নির্বাচন:</label>
+                        <select id="custom-target" style="width:100%; padding:3px; border:1px solid #bdc3c7; border-radius:3px; font-size:11px; height:24px;">
                         </select>
                     </div>
                     ${dateHtml}
@@ -1162,7 +1160,7 @@
                         let uType = localStorage.getItem('mf_user_type');
                         if(uType === 'BRANCH') pt2.innerText = "🚀 Branch Pro";
                         else if(uType === 'AREA') pt2.innerText = "🚀 Area Pro";
-                        else pt2.innerText = "🚀 Auditor Pro IT-Rameez";
+                        else pt2.innerText = "🚀 Auditor Pro";
                     }
                 }, 2000);
             });
@@ -1172,7 +1170,7 @@
 
         document.getElementById('sync-locations-btn').onclick = () => {
             togglePanel(true);
-            document.getElementById('audit-status').innerHTML = `<span style="color:#f39c12;">⏳ সিংক হচ্ছে, অপেক্ষা করুন...</span>`;
+            document.getElementById('audit-status').innerHTML = `<span style="color:#f39c12;">⏳ সিংক হচ্ছে...</span>`;
             document.getElementById('start-audit-btn').disabled = true;
             document.getElementById('export-excel-btn').style.display = 'none';
             
@@ -1269,7 +1267,7 @@
                 tbody.innerHTML = `
                     <tr>
                         <td style="text-align:left; font-weight:bold; color:#e67e22;">${bName}</td>
-                        <td colspan="4" style="text-align:center; color:#d35400; font-size:11px;">🔄 ম্যানুয়াল রিট্রাই চলছে (অপেক্ষা করুন)...</td>
+                        <td colspan="4" style="text-align:center; color:#d35400; font-size:10px;">🔄 রিট্রাই চলছে...</td>
                     </tr>
                 `;
 
@@ -1285,7 +1283,7 @@
                 
                 if (mData) {
                     let t2 = document.getElementById(`tbody-${safeId}`);
-                    if(t2) t2.innerHTML = `<tr><td style="text-align:left; font-weight:bold; color:#2980b9;">${bName}</td><td colspan="4" style="text-align:center; color:#27ae60; font-size:11px;">🔄 MIS ডান! AIS ডাটা রিড করা হচ্ছে...</td></tr>`;
+                    if(t2) t2.innerHTML = `<tr><td style="text-align:left; font-weight:bold; color:#2980b9;">${bName}</td><td colspan="4" style="text-align:center; color:#27ae60; font-size:10px;">🔄 AIS ডাটা রিড হচ্ছে...</td></tr>`;
                     
                     aData = await scrapeViaGhost('#/reports/acc-balance-sheets/balance-sheet-report-filter', sDate, '1', bId, 'ais', updateStatus);
                 }
@@ -1299,7 +1297,7 @@
                     
                     tbodyAfter.innerHTML = `
                         <tr>
-                            <td rowspan="5" style="text-align:left; font-weight:bold; color:#27ae60; vertical-align:middle; background:#f4f9f4;">${bName}</td>
+                            <td rowspan="5" style="text-align:left; font-weight:bold; color:#27ae60; vertical-align:middle; background:#f4f9f4; font-size:10px;">${bName}</td>
                             <td style="text-align:left;"><b>Loan</b></td>
                             <td>${formatNum(mData.loan)}</td>
                             <td>${formatNum(aData.loan)}</td>
@@ -1312,19 +1310,19 @@
                             <td style="color:${sDiff===0?'green':'red'}; font-weight:bold;">${formatNum(sDiff)}</td>
                         </tr>
                         <tr style="background:#fcfcfc;">
-                            <td style="text-align:left; color:#2c3e50;"><b>Cash in Hand</b></td>
+                            <td style="text-align:left; color:#2c3e50;"><b>Cash</b></td>
                             <td style="color:gray;">-</td>
                             <td style="color:#16a085; font-weight:bold;">${formatNum(aData.cashInHand)}</td>
                             <td style="color:gray;">-</td>
                         </tr>
                         <tr style="background:#fcfcfc;">
-                            <td style="text-align:left; color:#2c3e50;"><b>Cash at Bank</b></td>
+                            <td style="text-align:left; color:#2c3e50;"><b>Bank</b></td>
                             <td style="color:gray;">-</td>
                             <td style="color:#16a085; font-weight:bold;">${formatNum(aData.cashAtBank)}</td>
                             <td style="color:gray;">-</td>
                         </tr>
                         <tr style="background:#fcfcfc;">
-                            <td style="text-align:left; color:#2c3e50;"><b>Total Equity</b></td>
+                            <td style="text-align:left; color:#2c3e50;"><b>Equity</b></td>
                             <td style="color:gray;">-</td>
                             <td style="color:#8e44ad; font-weight:bold;">${formatNum(aData.equity)}</td>
                             <td style="color:gray;">-</td>
@@ -1335,9 +1333,9 @@
                     tbodyAfter.innerHTML = `
                         <tr>
                             <td style="text-align:left; font-weight:bold; color:#e74c3c;">${bName}</td>
-                            <td colspan="3" style="text-align:center; color:red; font-size:11px;">❌ রিট্রাই ব্যর্থ!</td>
+                            <td colspan="3" style="text-align:center; color:red; font-size:10px;">❌ ব্যর্থ!</td>
                             <td style="text-align:center;">
-                                <button class="manual-retry-btn" data-id="${bId}" data-name="${bName}" style="background:#e74c3c; color:white; border:none; padding:3px 8px; font-size:10px; border-radius:3px; cursor:pointer;">🔄 Retry</button>
+                                <button class="manual-retry-btn" data-id="${bId}" data-name="${bName}" style="background:#e74c3c; color:white; border:none; padding:2px 6px; font-size:10px; border-radius:2px; cursor:pointer;">🔄 Retry</button>
                             </td>
                         </tr>
                     `;
@@ -1408,7 +1406,7 @@
             document.getElementById('export-excel-btn').style.display = 'none';
             output.innerHTML = "";
             
-            status.innerHTML = `<div style="display:inline-block; width:12px; height:12px; border:2px solid #f3f3f3; border-top:2px solid #d35400; border-radius:50%; animation:spin 1s linear infinite; vertical-align:middle; margin-right:5px;"></div> <span id="status-text">প্রসেসিং শুরু হচ্ছে...</span>`;
+            status.innerHTML = `<div style="display:inline-block; width:10px; height:10px; border:2px solid #f3f3f3; border-top:2px solid #d35400; border-radius:50%; animation:spin 1s linear infinite; vertical-align:middle; margin-right:4px;"></div> <span id="status-text">প্রসেসিং শুরু হচ্ছে...</span>`;
             
             const updateStatus = (msg) => { 
                 let stEl = document.getElementById('status-text');
@@ -1417,9 +1415,9 @@
 
             const tableStyle = `
                 <style>
-                    .audit-table { width:100%; border-collapse:collapse; font-size:11px; text-align:right; }
-                    .audit-table th { border: 1px solid #bdc3c7; padding: 4px; white-space: nowrap; }
-                    .audit-table td { border: 1px solid #bdc3c7; padding: 4px; }
+                    .audit-table { width:100%; border-collapse:collapse; font-size:10px; text-align:right; table-layout:fixed; }
+                    .audit-table th { border: 1px solid #bdc3c7; padding: 4px 2px; text-align:center; overflow:hidden; }
+                    .audit-table td { border: 1px solid #bdc3c7; padding: 3px 2px; word-break:break-word; }
                     .audit-table tbody { border-bottom: 2px solid #2c3e50; }
                 </style>
             `;
@@ -1460,20 +1458,20 @@
 
                 if(finalOutput) {
                     finalOutput.innerHTML = tableStyle + `
-                        <div style="max-height:400px; overflow-y:auto; overflow-x:auto;">
+                        <div style="max-height:400px; overflow-y:auto;">
                         <table class="audit-table">
                             <thead style="background:#2c3e50; color:white; position:sticky; top:0; z-index:1;">
                                 <tr>
-                                    <th style="text-align:left;">Branch Name</th>
-                                    <th style="text-align:left;">Particulars</th>
-                                    <th>MIS Balance</th>
-                                    <th>AIS (Current)</th>
-                                    <th>Difference</th>
+                                    <th style="width:28%; text-align:left;">Branch</th>
+                                    <th style="width:18%; text-align:left;">Item</th>
+                                    <th style="width:18%;">MIS</th>
+                                    <th style="width:18%;">AIS</th>
+                                    <th style="width:18%;">Diff.</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 <tr>
-                                    <td rowspan="5" style="text-align:left; font-weight:bold; color:#27ae60; vertical-align:middle; background:#f4f9f4;">${targetName}</td>
+                                    <td rowspan="5" style="text-align:left; font-weight:bold; color:#27ae60; vertical-align:middle; background:#f4f9f4; font-size:10px;">${targetName}</td>
                                     <td style="text-align:left;"><b>Loan</b></td>
                                     <td>${formatNum(misData.loan)}</td>
                                     <td>${formatNum(aisData.loan)}</td>
@@ -1486,19 +1484,19 @@
                                     <td style="color:${savDiff===0?'green':'red'}; font-weight:bold;">${formatNum(savDiff)}</td>
                                 </tr>
                                 <tr style="background:#fcfcfc;">
-                                    <td style="text-align:left; color:#2c3e50;"><b>Cash in Hand</b></td>
+                                    <td style="text-align:left; color:#2c3e50;"><b>Cash</b></td>
                                     <td style="color:gray;">-</td>
                                     <td style="color:#16a085; font-weight:bold;">${formatNum(aisData.cashInHand)}</td>
                                     <td style="color:gray;">-</td>
                                 </tr>
                                 <tr style="background:#fcfcfc;">
-                                    <td style="text-align:left; color:#2c3e50;"><b>Cash at Bank</b></td>
+                                    <td style="text-align:left; color:#2c3e50;"><b>Bank</b></td>
                                     <td style="color:gray;">-</td>
                                     <td style="color:#16a085; font-weight:bold;">${formatNum(aisData.cashAtBank)}</td>
                                     <td style="color:gray;">-</td>
                                 </tr>
                                 <tr style="background:#fcfcfc;">
-                                    <td style="text-align:left; color:#2c3e50;"><b>Total Equity</b></td>
+                                    <td style="text-align:left; color:#2c3e50;"><b>Equity</b></td>
                                     <td style="color:gray;">-</td>
                                     <td style="color:#8e44ad; font-weight:bold;">${formatNum(aisData.equity)}</td>
                                     <td style="color:gray;">-</td>
@@ -1514,15 +1512,15 @@
             } 
             else {
                 let tableHtml = tableStyle + `
-                    <div style="max-height:400px; overflow-y:auto; overflow-x:auto;">
+                    <div style="max-height:400px; overflow-y:auto;">
                     <table class="audit-table">
                         <thead style="background:#2c3e50; color:white; position:sticky; top:0; z-index:1;">
                             <tr>
-                                <th style="text-align:left;">Branch Name</th>
-                                <th style="text-align:left;">Particulars</th>
-                                <th>MIS Balance</th>
-                                <th>AIS (Current)</th>
-                                <th>Difference</th>
+                                <th style="width:28%; text-align:left;">Branch</th>
+                                <th style="width:18%; text-align:left;">Item</th>
+                                <th style="width:18%;">MIS</th>
+                                <th style="width:18%;">AIS</th>
+                                <th style="width:18%;">Diff.</th>
                             </tr>
                         </thead>
                 `;
@@ -1531,8 +1529,8 @@
                     tableHtml += `
                         <tbody id="tbody-${safeId}">
                             <tr style="background:#fff;">
-                                <td style="text-align:left; font-weight:bold; color:#2c3e50;">${b.name}</td>
-                                <td colspan="4" style="text-align:center; color:gray; font-size:11px;">⏳ অপেক্ষমান...</td>
+                                <td style="text-align:left; font-weight:bold; color:#2c3e50; font-size:10px;">${b.name}</td>
+                                <td colspan="4" style="text-align:center; color:gray; font-size:10px;">⏳ অপেক্ষমান...</td>
                             </tr>
                         </tbody>
                     `;
@@ -1551,8 +1549,8 @@
                     if(tbodyBefore) {
                         tbodyBefore.innerHTML = `
                             <tr>
-                                <td style="text-align:left; font-weight:bold; color:#2980b9;">${b.name}</td>
-                                <td colspan="4" style="text-align:center; color:#d35400; font-size:11px;">🔄 MIS ডাটা রিড করা হচ্ছে...</td>
+                                <td style="text-align:left; font-weight:bold; color:#2980b9; font-size:10px;">${b.name}</td>
+                                <td colspan="4" style="text-align:center; color:#d35400; font-size:10px;">🔄 MIS রিড হচ্ছে...</td>
                             </tr>
                         `;
                     }
@@ -1560,7 +1558,7 @@
                     let mData = await scrapeViaGhost('#/reports/member-migration-balances/member-migration-balance-index', selectedDate, '1', b.id, 'mis', updateStatus);
                     if (!mData) {
                         let tRetry1 = document.getElementById(`tbody-${safeId}`);
-                        if(tRetry1) tRetry1.innerHTML = `<tr><td style="text-align:left; font-weight:bold; color:#e67e22;">${b.name}</td><td colspan="4" style="text-align:center; color:#d35400; font-size:11px;">🔄 MIS ফেইল! অটো-রিট্রাই হচ্ছে...</td></tr>`;
+                        if(tRetry1) tRetry1.innerHTML = `<tr><td style="text-align:left; font-weight:bold; color:#e67e22; font-size:10px;">${b.name}</td><td colspan="4" style="text-align:center; color:#d35400; font-size:10px;">🔄 MIS অটো-রিট্রাই...</td></tr>`;
                         
                         mData = await scrapeViaGhost('#/reports/member-migration-balances/member-migration-balance-index', selectedDate, '1', b.id, 'mis', updateStatus);
                     }
@@ -1568,12 +1566,12 @@
                     let aData = null;
                     if (mData) {
                         let tRetry2 = document.getElementById(`tbody-${safeId}`);
-                        if(tRetry2) tRetry2.innerHTML = `<tr><td style="text-align:left; font-weight:bold; color:#2980b9;">${b.name}</td><td colspan="4" style="text-align:center; color:#27ae60; font-size:11px;">🔄 AIS ডাটা রিড করা হচ্ছে...</td></tr>`;
+                        if(tRetry2) tRetry2.innerHTML = `<tr><td style="text-align:left; font-weight:bold; color:#2980b9; font-size:10px;">${b.name}</td><td colspan="4" style="text-align:center; color:#27ae60; font-size:10px;">🔄 AIS রিড হচ্ছে...</td></tr>`;
                         
                         aData = await scrapeViaGhost('#/reports/acc-balance-sheets/balance-sheet-report-filter', selectedDate, '1', b.id, 'ais', updateStatus);
                         if (!aData) {
                             let tRetry3 = document.getElementById(`tbody-${safeId}`);
-                            if(tRetry3) tRetry3.innerHTML = `<tr><td style="text-align:left; font-weight:bold; color:#e67e22;">${b.name}</td><td colspan="4" style="text-align:center; color:#d35400; font-size:11px;">🔄 AIS ফেইল! অটো-রিট্রাই হচ্ছে...</td></tr>`;
+                            if(tRetry3) tRetry3.innerHTML = `<tr><td style="text-align:left; font-weight:bold; color:#e67e22; font-size:10px;">${b.name}</td><td colspan="4" style="text-align:center; color:#d35400; font-size:10px;">🔄 AIS অটো-রিট্রাই...</td></tr>`;
                             
                             aData = await scrapeViaGhost('#/reports/acc-balance-sheets/balance-sheet-report-filter', selectedDate, '1', b.id, 'ais', updateStatus);
                         }
@@ -1588,7 +1586,7 @@
                         
                         tbodyAfter.innerHTML = `
                             <tr>
-                                <td rowspan="5" style="text-align:left; font-weight:bold; color:#27ae60; vertical-align:middle; background:#f4f9f4;">${b.name}</td>
+                                <td rowspan="5" style="text-align:left; font-weight:bold; color:#27ae60; vertical-align:middle; background:#f4f9f4; font-size:10px;">${b.name}</td>
                                 <td style="text-align:left;"><b>Loan</b></td>
                                 <td>${formatNum(mData.loan)}</td>
                                 <td>${formatNum(aData.loan)}</td>
@@ -1601,19 +1599,19 @@
                                 <td style="color:${sDiff===0?'green':'red'}; font-weight:bold;">${formatNum(sDiff)}</td>
                             </tr>
                             <tr style="background:#fcfcfc;">
-                                <td style="text-align:left; color:#2c3e50;"><b>Cash in Hand</b></td>
+                                <td style="text-align:left; color:#2c3e50;"><b>Cash</b></td>
                                 <td style="color:gray;">-</td>
                                 <td style="color:#16a085; font-weight:bold;">${formatNum(aData.cashInHand)}</td>
                                 <td style="color:gray;">-</td>
                             </tr>
                             <tr style="background:#fcfcfc;">
-                                <td style="text-align:left; color:#2c3e50;"><b>Cash at Bank</b></td>
+                                <td style="text-align:left; color:#2c3e50;"><b>Bank</b></td>
                                 <td style="color:gray;">-</td>
                                 <td style="color:#16a085; font-weight:bold;">${formatNum(aData.cashAtBank)}</td>
                                 <td style="color:gray;">-</td>
                             </tr>
                             <tr style="background:#fcfcfc;">
-                                <td style="text-align:left; color:#2c3e50;"><b>Total Equity</b></td>
+                                <td style="text-align:left; color:#2c3e50;"><b>Equity</b></td>
                                 <td style="color:gray;">-</td>
                                 <td style="color:#8e44ad; font-weight:bold;">${formatNum(aData.equity)}</td>
                                 <td style="color:gray;">-</td>
@@ -1623,10 +1621,10 @@
                     } else {
                         tbodyAfter.innerHTML = `
                             <tr>
-                                <td style="text-align:left; font-weight:bold; color:#e74c3c;">${b.name}</td>
-                                <td colspan="3" style="text-align:center; color:red; font-size:11px;">❌ ডাটা পাওয়া যায়নি</td>
+                                <td style="text-align:left; font-weight:bold; color:#e74c3c; font-size:10px;">${b.name}</td>
+                                <td colspan="3" style="text-align:center; color:red; font-size:10px;">❌ ডাটা নেই</td>
                                 <td style="text-align:center; vertical-align:middle;">
-                                    <button class="manual-retry-btn" data-id="${b.id}" data-name="${b.name}" style="background:#e74c3c; color:white; border:none; padding:4px 8px; font-size:11px; border-radius:3px; cursor:pointer; font-weight:bold; box-shadow:0 2px 4px rgba(0,0,0,0.2);">🔄 Retry</button>
+                                    <button class="manual-retry-btn" data-id="${b.id}" data-name="${b.name}" style="background:#e74c3c; color:white; border:none; padding:2px 6px; font-size:10px; border-radius:2px; cursor:pointer; font-weight:bold;">🔄 Retry</button>
                                 </td>
                             </tr>
                         `;
