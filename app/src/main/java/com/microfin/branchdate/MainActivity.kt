@@ -44,7 +44,7 @@ class MainActivity : Activity() {
         settings.cacheMode = WebSettings.LOAD_DEFAULT
 
         // 💡 Enable Pinch-to-Zoom without annoying onscreen buttons
-        settings.supportZoom(true)
+        settings.setSupportZoom(true)
         settings.builtInZoomControls = true
         settings.displayZoomControls = false
 
