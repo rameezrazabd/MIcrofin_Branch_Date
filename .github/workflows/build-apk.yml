@@ -17,13 +17,13 @@ jobs:
       uses: actions/checkout@v4
 
     - name: Set up JDK 17
-      uses: actions/setup-java@v3
+      uses: actions/setup-java@v4
       with:
         java-version: '17'
         distribution: 'temurin'
 
     - name: Setup Gradle & Build APK
-      uses: gradle/gradle-build-action@v2
+      uses: gradle/actions/setup-gradle@v3
       with:
         arguments: assembleDebug
 
@@ -31,10 +31,11 @@ jobs:
       run: mv app/build/outputs/apk/debug/app-debug.apk app/build/outputs/apk/debug/MicrofinApp-Latest.apk
 
     - name: Upload APK as GitHub Artifact (Optional Backup)
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: Microfin-Status-App
         path: app/build/outputs/apk/debug/MicrofinApp-Latest.apk
+        overwrite: true
 
     - name: 🚀 Auto Release APK (Permanent Direct Download Link)
       uses: ncipollo/release-action@v1
