@@ -43,6 +43,11 @@ class MainActivity : Activity() {
         settings.loadWithOverviewMode = true
         settings.cacheMode = WebSettings.LOAD_DEFAULT
 
+        // 💡 Enable Pinch-to-Zoom without annoying onscreen buttons
+        settings.supportZoom(true)
+        settings.builtInZoomControls = true
+        settings.displayZoomControls = false
+
         CookieManager.getInstance().setAcceptCookie(true)
         CookieManager.getInstance().setAcceptThirdPartyCookies(webView, true)
 
