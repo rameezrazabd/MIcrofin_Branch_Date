@@ -1,0 +1,50 @@
+name: Build & Release Android APK
+
+on:
+  push:
+    branches: [ main, master ]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout Code
+      uses: actions/checkout@v4
+
+    - name: Set up JDK 17
+      uses: actions/setup-java@v3
+      with:
+        java-version: '17'
+        distribution: 'temurin'
+
+    - name: Setup Gradle & Build APK
+      uses: gradle/gradle-build-action@v2
+      with:
+        arguments: assembleDebug
+
+    - name: Rename APK for Direct Release
+      run: mv app/build/outputs/apk/debug/app-debug.apk app/build/outputs/apk/debug/MicrofinApp-Latest.apk
+
+    - name: Upload APK as GitHub Artifact (Optional Backup)
+      uses: actions/upload-artifact@v3
+      with:
+        name: Microfin-Status-App
+        path: app/build/outputs/apk/debug/MicrofinApp-Latest.apk
+
+    - name: 🚀 Auto Release APK (Permanent Direct Download Link)
+      uses: ncipollo/release-action@v1
+      with:
+        tag: latest
+        name: "🚀 Latest Automatic Build (Microfin App)"
+        body: |
+          এই রিলিজটি গিটহাব থেকে স্বয়ংক্রিয়ভাবে বিল্ড করা হয়েছে। নিচের **MicrofinApp-Latest.apk** লিংকে ক্লিক করলে কোনো লগইন ছাড়াই সরাসরি অ্যাপ ডাউনলোড হবে।
+        artifacts: "app/build/outputs/apk/debug/MicrofinApp-Latest.apk"
+        allowUpdates: true
+        removeArtifacts: true
+        replacesArtifacts: true
+        token: ${{ secrets.GITHUB_TOKEN }}
