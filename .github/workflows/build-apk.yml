@@ -22,6 +22,27 @@ jobs:
         java-version: '17'
         distribution: 'temurin'
 
+    - name: 🔒 Setup Permanent Signing Keystore (Zero Conflict)
+      run: |
+        mkdir -p ~/.android
+        if [ -f .github/microfin.keystore ]; then
+          cp .github/microfin.keystore ~/.android/debug.keystore
+          echo "✅ Restored permanent keystore from repository!"
+        else
+          echo "⚙️ Generating new permanent keystore..."
+          keytool -genkeypair -v -keystore ~/.android/debug.keystore \
+            -storepass android -keypass android -alias androiddebugkey \
+            -keyalg RSA -keysize 2048 -validity 10000 \
+            -dname "CN=Microfin IT, OU=Branch Date, O=Microfin360, L=Dhaka, ST=Dhaka, C=BD"
+          cp ~/.android/debug.keystore .github/microfin.keystore
+          git config --global user.name "GitHub Actions Bot"
+          git config --global user.email "actions@github.com"
+          git add .github/microfin.keystore
+          git commit -m "🔒 Auto-saved permanent release keystore [skip ci]" || true
+          git push || true
+          echo "✅ Generated and committed permanent keystore to repository!"
+        fi
+
     - name: Setup Gradle & Build APK
       uses: gradle/actions/setup-gradle@v3
       with:
