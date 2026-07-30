@@ -2,11 +2,15 @@ package com.microfin.branchdate
 
 import android.annotation.SuppressLint
 import android.app.Activity
+import android.content.ContentValues
 import android.content.Context
+import android.media.MediaScannerConnection
+import android.os.Build
 import android.os.Bundle
 import android.os.Environment
 import android.os.Handler
 import android.os.Looper
+import android.provider.MediaStore
 import android.util.Log
 import android.webkit.CookieManager
 import android.webkit.JavascriptInterface
@@ -79,21 +83,43 @@ class WebAppInterface(private val context: Context) {
     @JavascriptInterface
     fun saveExcel(content: String, filename: String) {
         try {
-            val downloadsDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS)
-            if (!downloadsDir.exists()) {
-                downloadsDir.mkdirs()
+            var savedSuccessfully = false
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                val resolver = context.contentResolver
+                val contentValues = ContentValues().apply {
+                    put(MediaStore.MediaColumns.DISPLAY_NAME, filename)
+                    put(MediaStore.MediaColumns.MIME_TYPE, "application/vnd.ms-excel")
+                    put(MediaStore.MediaColumns.RELATIVE_PATH, Environment.DIRECTORY_DOWNLOADS)
+                }
+                val uri = resolver.insert(MediaStore.Downloads.EXTERNAL_CONTENT_URI, contentValues)
+                if (uri != null) {
+                    resolver.openOutputStream(uri)?.use { out ->
+                        out.write(content.toByteArray(Charsets.UTF_8))
+                    }
+                    savedSuccessfully = true
+                }
+            } else {
+                val downloadsDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS)
+                if (!downloadsDir.exists()) downloadsDir.mkdirs()
+                val file = File(downloadsDir, filename)
+                FileOutputStream(file).use { out ->
+                    out.write(content.toByteArray(Charsets.UTF_8))
+                }
+                MediaScannerConnection.scanFile(context, arrayOf(file.absolutePath), null, null)
+                savedSuccessfully = true
             }
-            val file = File(downloadsDir, filename)
-            FileOutputStream(file).use { out ->
-                out.write(content.toByteArray(Charsets.UTF_8))
-            }
+
             Handler(Looper.getMainLooper()).post {
-                Toast.makeText(context, "✅ Excel ফাইলটি আপনার ফোনের Downloads ফোল্ডারে সেভ হয়েছে!", Toast.LENGTH_LONG).show()
+                if (savedSuccessfully) {
+                    Toast.makeText(context, "✅ Excel ফাইলটি ফোনের Downloads ফোল্ডারে সেভ হয়েছে!", Toast.LENGTH_LONG).show()
+                } else {
+                    Toast.makeText(context, "❌ ফাইল সেভ করা সম্ভব হয়নি!", Toast.LENGTH_LONG).show()
+                }
             }
         } catch (e: Exception) {
             Log.e("MicrofinApp", "Excel save error: ${e.message}")
             Handler(Looper.getMainLooper()).post {
-                Toast.makeText(context, "❌ ফাইল সেভ করতে সমস্যা হয়েছে: ${e.message}", Toast.LENGTH_LONG).show()
+                Toast.makeText(context, "❌ ফাইল সেভে সমস্যা: ${e.message}", Toast.LENGTH_LONG).show()
             }
         }
     }
