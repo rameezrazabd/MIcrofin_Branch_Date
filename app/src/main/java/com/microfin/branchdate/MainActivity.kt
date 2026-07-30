@@ -4,7 +4,9 @@ import android.annotation.SuppressLint
 import android.app.Activity
 import android.content.ContentValues
 import android.content.Context
+import android.content.Intent
 import android.media.MediaScannerConnection
+import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import android.os.Environment
@@ -125,6 +127,20 @@ class WebAppInterface(private val context: Context) {
             Log.e("MicrofinApp", "Excel save error: ${e.message}")
             Handler(Looper.getMainLooper()).post {
                 Toast.makeText(context, "❌ ফাইল সেভে সমস্যা: ${e.message}", Toast.LENGTH_LONG).show()
+            }
+        }
+    }
+
+    @JavascriptInterface
+    fun openUrl(url: String) {
+        try {
+            val intent = Intent(Intent.ACTION_VIEW, Uri.parse(url))
+            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+            context.startActivity(intent)
+        } catch (e: Exception) {
+            Log.e("MicrofinApp", "Error opening URL: ${e.message}")
+            Handler(Looper.getMainLooper()).post {
+                Toast.makeText(context, "লিংক ওপেন করা যাচ্ছে না: ${e.message}", Toast.LENGTH_SHORT).show()
             }
         }
     }
