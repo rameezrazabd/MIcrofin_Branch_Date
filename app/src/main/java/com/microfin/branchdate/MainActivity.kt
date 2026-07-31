@@ -133,6 +133,51 @@ class WebAppInterface(private val context: Context) {
     }
 
     @JavascriptInterface
+    fun saveBase64File(base64Data: String, filename: String, mimeType: String) {
+        try {
+            val bytes = android.util.Base64.decode(base64Data, android.util.Base64.DEFAULT)
+            var savedSuccessfully = false
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                val resolver = context.contentResolver
+                val contentValues = ContentValues().apply {
+                    put(MediaStore.MediaColumns.DISPLAY_NAME, filename)
+                    put(MediaStore.MediaColumns.MIME_TYPE, mimeType)
+                    put(MediaStore.MediaColumns.RELATIVE_PATH, Environment.DIRECTORY_DOWNLOADS)
+                }
+                val uri = resolver.insert(MediaStore.Downloads.EXTERNAL_CONTENT_URI, contentValues)
+                if (uri != null) {
+                    resolver.openOutputStream(uri)?.use { out ->
+                        out.write(bytes)
+                    }
+                    savedSuccessfully = true
+                }
+            } else {
+                val downloadsDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS)
+                if (!downloadsDir.exists()) downloadsDir.mkdirs()
+                val file = File(downloadsDir, filename)
+                FileOutputStream(file).use { out ->
+                    out.write(bytes)
+                }
+                MediaScannerConnection.scanFile(context, arrayOf(file.absolutePath), null, null)
+                savedSuccessfully = true
+            }
+
+            Handler(Looper.getMainLooper()).post {
+                if (savedSuccessfully) {
+                    Toast.makeText(context, "✅ Excel (.xlsx) ফাইলটি ফোনের Downloads ফোল্ডারে সেভ হয়েছে!", Toast.LENGTH_LONG).show()
+                } else {
+                    Toast.makeText(context, "❌ ফাইল সেভ করা সম্ভব হয়নি!", Toast.LENGTH_LONG).show()
+                }
+            }
+        } catch (e: Exception) {
+            Log.e("MicrofinApp", "Excel save error: ${e.message}")
+            Handler(Looper.getMainLooper()).post {
+                Toast.makeText(context, "❌ ফাইল সেভে সমস্যা: ${e.message}", Toast.LENGTH_LONG).show()
+            }
+        }
+    }
+
+    @JavascriptInterface
     fun openUrl(url: String) {
         try {
             val intent = Intent(Intent.ACTION_VIEW, Uri.parse(url))
