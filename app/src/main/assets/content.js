@@ -2,9 +2,9 @@
 // 🔔 0. AUTO UPDATE NOTIFICATION SYSTEM
 // ========================================================================
 (function checkAppUpdate() {
-    const CURRENT_VERSION = "1.1"; // বর্তমান অ্যাপ ভার্সন
+    const CURRENT_VERSION = "1.0"; // বর্তমান অ্যাপ ভার্সন
     
-    // ⚠️ নিচে YOUR_USERNAME এর জায়গায় আপনার গিটহাবের আসল ইউজারনেম বসিয়ে দিন
+    // ⚠️ নিচে YOUR_USERNAME এর জায়গায় আপনার গিটহাবের আসল ইউজারনেম বসিয়ে দিন 
     const UPDATE_JSON_URL = "https://raw.githubusercontent.com/rameezrazabd/Microfin_Branch_Date/main/update.json"; 
 
     setTimeout(() => {
@@ -540,23 +540,24 @@
             let table = document.querySelector("#bde-table-output table");
             if (!table) return;
 
-            let clonedTable = table.cloneNode(true);
-            let thead = clonedTable.querySelector('thead');
-            if (thead) thead.style.position = 'static';
+            let csvContent = "\uFEFF"; // UTF-8 BOM for perfect Bengali & Emoji support
+            table.querySelectorAll('tr').forEach(row => {
+                if (row.style.display === 'none' || (row.parentElement && row.parentElement.style.display === 'none')) return;
+                let rowData = [];
+                row.querySelectorAll('th, td').forEach(col => {
+                    let text = col.innerText || col.textContent || "";
+                    text = text.replace(/[\r\n]+/g, ' ').replace(/"/g, '""').trim();
+                    rowData.push(`"${text}"`);
+                });
+                if (rowData.length > 0) csvContent += rowData.join(",") + "\r\n";
+            });
 
-            let template = `
-                <html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns="http://www.w3.org/TR/REC-html40">
-                <head><meta charset="UTF-8"><!--[if gte mso 9]><xml><x:ExcelWorkbook><x:ExcelWorksheets><x:ExcelWorksheet><x:Name>Branch Dates</x:Name><x:WorksheetOptions><x:DisplayGridlines/></x:WorksheetOptions></x:ExcelWorksheet></x:ExcelWorksheets></x:ExcelWorkbook></xml><![endif]--></head>
-                <body>${clonedTable.outerHTML}</body>
-                </html>
-            `;
-
-            let fileName = `Branch_Dates_${new Date().toISOString().split('T')[0]}.xls`;
+            let fileName = `Branch_Dates_${new Date().toISOString().split('T')[0]}.csv`;
 
             if (window.AndroidDownloader && window.AndroidDownloader.saveExcel) {
-                window.AndroidDownloader.saveExcel(template, fileName);
+                window.AndroidDownloader.saveExcel(csvContent, fileName);
             } else {
-                let blob = new Blob([template], { type: 'application/vnd.ms-excel;charset=utf-8' });
+                let blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
                 let url = URL.createObjectURL(blob);
                 let link = document.createElement("a");
                 link.href = url;
@@ -634,14 +635,14 @@
         if(exportBtn) { exportBtn.style.display = 'none'; }
 
         let tableHtml = `
-            <table style="width:100%; border-collapse:collapse; font-size:10.5px; text-align:center; table-layout:fixed;">
+            <table style="width:100%; border-collapse:collapse; font-size:10px; text-align:center; table-layout:fixed;">
                 <thead style="position: sticky; top: 0; z-index:5;">
                     <tr>
-                        <th style="padding:4px 2px; border:1px solid #bdc3c7; background:#2c3e50; color:white; width:34%;">Branch</th>
-                        <th style="padding:4px 2px; border:1px solid #bdc3c7; background:#2980b9; color:white; width:21%;">MIS</th>
-                        <th style="padding:4px 1px; border:1px solid #bdc3c7; background:#2980b9; color:white; width:12%;">Lag</th>
-                        <th style="padding:4px 2px; border:1px solid #bdc3c7; background:#27ae60; color:white; width:21%;">AIS</th>
-                        <th style="padding:4px 1px; border:1px solid #bdc3c7; background:#27ae60; color:white; width:12%;">Lag</th>
+                        <th style="padding:5px 3px; border:1px solid #bdc3c7; background:#2c3e50; color:white; width:36%; white-space:nowrap; overflow:hidden;">Branch</th>
+                        <th style="padding:5px 1px; border:1px solid #bdc3c7; background:#2980b9; color:white; width:21%; white-space:nowrap;">MIS</th>
+                        <th style="padding:5px 1px; border:1px solid #bdc3c7; background:#2980b9; color:white; width:11%; white-space:nowrap;">Lag</th>
+                        <th style="padding:5px 1px; border:1px solid #bdc3c7; background:#27ae60; color:white; width:21%; white-space:nowrap;">AIS</th>
+                        <th style="padding:5px 1px; border:1px solid #bdc3c7; background:#27ae60; color:white; width:11%; white-space:nowrap;">Lag</th>
                     </tr>
                 </thead>
         `;
@@ -651,8 +652,8 @@
             tableHtml += `
                 <tbody id="bde-tr-${safeId}" data-status="current">
                     <tr>
-                        <td style="text-align:left; padding:4px 2px; border:1px solid #bdc3c7; font-weight:bold; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${b.name}</td>
-                        <td colspan="4" style="padding:4px 2px; border:1px solid #bdc3c7; color:gray; font-size:10px;">⏳ ফেচিং...</td>
+                        <td style="text-align:left; padding:3px 4px; border:1px solid #bdc3c7; font-weight:bold; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width:0; font-size:10px;">${b.name}</td>
+                        <td colspan="4" style="padding:3px 2px; border:1px solid #bdc3c7; color:gray; font-size:10px; white-space:nowrap;">⏳ ফেচিং...</td>
                     </tr>
                 </tbody>
             `;
@@ -688,7 +689,9 @@
 
                 let isMismatch = (misDate !== "N/A" && aisDate !== "N/A" && misDate !== aisDate);
                 let rowBg = isMismatch ? "background:#fdedec;" : (isOverdue ? "background:#fff5f5;" : "");
-                let badge = isOverdue ? `<br><span style="color:#c0392b; font-size:9px; font-weight:bold;">[🔴 বিলম্বে]</span>` : `<span style="color:#27ae60; font-size:9px; font-weight:bold;"> [✅]</span>`;
+                
+                let badgeHtml = isOverdue ? `<span style="color:#c0392b; font-weight:bold;">[🔴 বিলম্ব]</span> ` : `<span style="color:#27ae60; font-weight:bold;">[✅]</span> `;
+                let cleanName = `${badgeHtml}${b.name}`;
 
                 let safeId = b.id.toString().replace(/[^a-zA-Z0-9]/g, '');
                 
@@ -697,11 +700,11 @@
                     trElement.setAttribute('data-status', isOverdue ? 'overdue' : 'current');
                     trElement.innerHTML = `
                         <tr style="${rowBg}">
-                            <td style="text-align:left; padding:4px 2px; border:1px solid #bdc3c7; font-weight:bold; color:#2c3e50; word-break:break-word; font-size:10px;">${b.name}${badge}</td>
-                            <td style="padding:4px 1px; border:1px solid #bdc3c7; color:${misDate === 'N/A'?'#e74c3c':'#2980b9'}; font-weight:bold; background:#f4f9f9; font-size:10px;">${misDate}</td>
-                            <td style="padding:4px 1px; border:1px solid #bdc3c7; color:${misLagColor}; font-weight:bold; background:#f4f9f9;">${misLag}</td>
-                            <td style="padding:4px 1px; border:1px solid #bdc3c7; color:${aisDate === 'N/A'?'#e74c3c':'#27ae60'}; font-weight:bold; background:#f9fbf9; font-size:10px;">${aisDate}</td>
-                            <td style="padding:4px 1px; border:1px solid #bdc3c7; color:${aisLagColor}; font-weight:bold; background:#f9fbf9;">${aisLag}</td>
+                            <td title="${b.name}" style="text-align:left; padding:3px 3px; border:1px solid #bdc3c7; font-weight:bold; color:#2c3e50; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:0; font-size:10px;">${cleanName}</td>
+                            <td style="padding:3px 1px; border:1px solid #bdc3c7; color:${misDate === 'N/A'?'#e74c3c':'#2980b9'}; font-weight:bold; background:#f4f9f9; font-size:9.5px; white-space:nowrap; overflow:hidden;">${misDate}</td>
+                            <td style="padding:3px 1px; border:1px solid #bdc3c7; color:${misLagColor}; font-weight:bold; background:#f4f9f9; font-size:10px; white-space:nowrap;">${misLag}</td>
+                            <td style="padding:3px 1px; border:1px solid #bdc3c7; color:${aisDate === 'N/A'?'#e74c3c':'#27ae60'}; font-weight:bold; background:#f9fbf9; font-size:9.5px; white-space:nowrap; overflow:hidden;">${aisDate}</td>
+                            <td style="padding:3px 1px; border:1px solid #bdc3c7; color:${aisLagColor}; font-weight:bold; background:#f9fbf9; font-size:10px; white-space:nowrap;">${aisLag}</td>
                         </tr>
                     `;
                 }
@@ -1321,18 +1324,24 @@
             let table = document.querySelector('.audit-table');
             if(!table) return;
 
-            let clone = table.cloneNode(true);
-            clone.querySelectorAll('.manual-retry-btn').forEach(btn => btn.remove());
-            clone.querySelectorAll('th, td').forEach(cell => {
-                cell.style.border = "1px solid #000000";
+            let csvContent = "\uFEFF"; // UTF-8 BOM for perfect Bengali & Emoji support
+            table.querySelectorAll('tr').forEach(row => {
+                if (row.style.display === 'none' || (row.parentElement && row.parentElement.style.display === 'none')) return;
+                let rowData = [];
+                row.querySelectorAll('th, td').forEach(col => {
+                    let text = "";
+                    if (col.querySelector('.manual-retry-btn')) {
+                        let clone = col.cloneNode(true);
+                        clone.querySelectorAll('.manual-retry-btn').forEach(btn => btn.remove());
+                        text = clone.innerText || clone.textContent || "";
+                    } else {
+                        text = col.innerText || col.textContent || "";
+                    }
+                    text = text.replace(/[\r\n]+/g, ' ').replace(/"/g, '""').trim();
+                    rowData.push(`"${text}"`);
+                });
+                if (rowData.length > 0) csvContent += rowData.join(",") + "\r\n";
             });
-
-            let html = `
-                <html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns="http://www.w3.org/TR/REC-html40">
-                <head><meta charset="UTF-8"></head>
-                <body>${clone.outerHTML}</body>
-                </html>
-            `;
             
             let uType = localStorage.getItem('mf_user_type');
             let targetName = "Branch";
@@ -1343,12 +1352,12 @@
             }
             
             let targetDate = document.getElementById('custom-audit-date').value;
-            let fileName = `Audit_Report_${targetName.replace(/\s+/g, '_')}_${targetDate}.xls`;
+            let fileName = `Audit_Report_${targetName.replace(/\s+/g, '_')}_${targetDate}.csv`;
 
             if (window.AndroidDownloader && window.AndroidDownloader.saveExcel) {
-                window.AndroidDownloader.saveExcel(html, fileName);
+                window.AndroidDownloader.saveExcel(csvContent, fileName);
             } else {
-                let blob = new Blob([html], {type: 'application/vnd.ms-excel'});
+                let blob = new Blob([csvContent], {type: 'text/csv;charset=utf-8;'});
                 let a = document.createElement('a');
                 a.href = URL.createObjectURL(blob);
                 a.download = fileName;
