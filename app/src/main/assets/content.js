@@ -2,7 +2,7 @@
 // 🔔 0. AUTO UPDATE NOTIFICATION SYSTEM
 // ========================================================================
 (function checkAppUpdate() {
-    const CURRENT_VERSION = "1.0"; // বর্তমান অ্যাপ ভার্সন
+    const CURRENT_VERSION = "1.1"; // বর্তমান অ্যাপ ভার্সন
     
     // ⚠️ নিচে YOUR_USERNAME এর জায়গায় আপনার গিটহাবের আসল ইউজারনেম বসিয়ে দিন (যেমন: rameez123 ইত্যাদি)
     const UPDATE_JSON_URL = "https://raw.githubusercontent.com/YOUR_USERNAME/Microfin_Branch_Date/main/update.json"; 
