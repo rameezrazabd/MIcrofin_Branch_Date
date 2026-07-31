@@ -92,10 +92,11 @@ class WebAppInterface(private val context: Context) {
         try {
             var savedSuccessfully = false
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                val mimeType = if (filename.endsWith(".csv", true)) "text/csv" else "application/vnd.ms-excel"
                 val resolver = context.contentResolver
                 val contentValues = ContentValues().apply {
                     put(MediaStore.MediaColumns.DISPLAY_NAME, filename)
-                    put(MediaStore.MediaColumns.MIME_TYPE, "application/vnd.ms-excel")
+                    put(MediaStore.MediaColumns.MIME_TYPE, mimeType)
                     put(MediaStore.MediaColumns.RELATIVE_PATH, Environment.DIRECTORY_DOWNLOADS)
                 }
                 val uri = resolver.insert(MediaStore.Downloads.EXTERNAL_CONTENT_URI, contentValues)
