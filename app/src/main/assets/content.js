@@ -2,10 +2,10 @@
 // 🔔 0. AUTO UPDATE NOTIFICATION SYSTEM
 // ========================================================================
 (function checkAppUpdate() {
-    const CURRENT_VERSION = "1.1"; // বর্তমান অ্যাপ ভার্সন
+    const CURRENT_VERSION = "1.0"; // বর্তমান অ্যাপ ভার্সন
     
-    // ⚠️ নিচে YOUR_USERNAME এর জায়গায় আপনার গিটহাবের আসল ইউজারনেম বসিয়ে দিন
-    const UPDATE_JSON_URL = "https://raw.githubusercontent.com/rameezrazabd/Microfin_Branch_Date/main/update.json"; 
+    // ⚠️ নিচে YOUR_USERNAME এর জায়গায় আপনার গিটহাবের আসল ইউজারনেম বসিয়ে দিন (যেমন: rameez123 ইত্যাদি)
+    const UPDATE_JSON_URL = "https://raw.githubusercontent.com/YOUR_USERNAME/Microfin_Branch_Date/main/update.json"; 
 
     setTimeout(() => {
         fetch(UPDATE_JSON_URL + "?t=" + new Date().getTime())
@@ -457,7 +457,7 @@
 
         panel.innerHTML = `
             <div id="bde-drag-header" style="background:#2c3e50; color:white; padding:8px 12px; display:flex; justify-content:space-between; align-items:center; cursor:move; flex-shrink:0;">
-                <strong style="font-size:13px;">📅 Branch Date Extractor</strong>
+                <strong style="font-size:13px;">📅 Branch Date Extractor v3.0</strong>
                 <button id="bde-close-date-panel" style="background:none; border:none; color:#e74c3c; font-size:16px; cursor:pointer; font-weight:bold;">✖</button>
             </div>
 
@@ -478,6 +478,24 @@
 
                 <button id="bde-start-fetch-btn" style="width:100%; background:#27ae60; color:white; border:none; padding:6px; font-weight:bold; font-size:13px; border-radius:4px; cursor:pointer; margin-bottom:4px; flex-shrink:0;">🚀 Fetch Dates (Auto Engine)</button>
                 
+                <!-- 🌟 টপ সামারি বক্স (Top Stats Card) -->
+                <div id="bde-stats-box" style="display:flex; gap:6px; margin-bottom:6px; flex-shrink:0;">
+                    <div style="flex:1; background:#e8f8f5; border:1px solid #2ecc71; border-radius:4px; padding:4px; text-align:center;">
+                        <div style="font-size:10px; color:#27ae60; font-weight:bold;">✅ কারেন্ট ডেটে আছে</div>
+                        <div id="bde-cnt-current" style="font-size:15px; font-weight:bold; color:#2c3e50;">0</div>
+                    </div>
+                    <div id="bde-card-overdue" style="flex:1; background:#fdedec; border:1px solid #e74c3c; border-radius:4px; padding:4px; text-align:center; cursor:pointer; box-shadow:0 2px 5px rgba(231,76,60,0.2);">
+                        <div style="font-size:10px; color:#c0392b; font-weight:bold;">⚠️ পিছিয়ে আছে (Overdue)</div>
+                        <div id="bde-cnt-overdue" style="font-size:15px; font-weight:bold; color:#c0392b;">0</div>
+                    </div>
+                </div>
+
+                <!-- 🌟 ২টা লাইভ ট্যাব (Segmented Switcher) -->
+                <div id="bde-tabs-bar" style="display:flex; gap:4px; margin-bottom:4px; flex-shrink:0;">
+                    <button id="bde-tab-all" style="flex:1; background:#2980b9; color:white; border:none; padding:6px; border-radius:4px; font-size:11px; font-weight:bold; cursor:pointer;">🏢 সকল শাখা (<span id="bde-lbl-all">0</span>)</button>
+                    <button id="bde-tab-overdue" style="flex:1; background:#ecf0f1; color:#7f8c8d; border:none; padding:6px; border-radius:4px; font-size:11px; font-weight:bold; cursor:pointer;">⚠️ শুধু পিছিয়ে থাকা (<span id="bde-lbl-overdue">0</span>)</button>
+                </div>
+
                 <div id="bde-status-msg" style="font-size:11px; font-weight:bold; color:#d35400; text-align:center; min-height:16px; flex-shrink:0;"></div>
                 
                 <div id="bde-table-output" style="margin-top:4px; flex:1; overflow-y:auto; border:1px solid #eaeaea; border-radius:4px;"></div>
@@ -489,6 +507,34 @@
         document.getElementById('bde-close-date-panel').onclick = () => panel.remove();
         makeDraggable(panel, document.getElementById('bde-drag-header'));
         document.getElementById('bde-ui-level').onchange = populateTargets;
+
+        let tabAll = document.getElementById('bde-tab-all');
+        let tabOverdue = document.getElementById('bde-tab-overdue');
+        let cardOverdue = document.getElementById('bde-card-overdue');
+
+        function filterTableRows(showOnlyOverdue) {
+            if (showOnlyOverdue) {
+                tabAll.style.background = '#ecf0f1'; tabAll.style.color = '#7f8c8d';
+                tabOverdue.style.background = '#e74c3c'; tabOverdue.style.color = 'white';
+            } else {
+                tabAll.style.background = '#2980b9'; tabAll.style.color = 'white';
+                tabOverdue.style.background = '#ecf0f1'; tabOverdue.style.color = '#7f8c8d';
+            }
+            document.querySelectorAll('#bde-table-output tbody[id^="bde-tr-"]').forEach(tbody => {
+                let status = tbody.getAttribute('data-status');
+                if (showOnlyOverdue) {
+                    tbody.style.display = (status === 'overdue') ? '' : 'none';
+                } else {
+                    tbody.style.display = '';
+                }
+            });
+        }
+
+        if (tabAll && tabOverdue && cardOverdue) {
+            tabAll.onclick = () => filterTableRows(false);
+            tabOverdue.onclick = () => filterTableRows(true);
+            cardOverdue.onclick = () => filterTableRows(true);
+        }
 
         document.getElementById('bde-sync-btn').onclick = () => {
             document.getElementById('bde-status-msg').innerText = "⏳ ডাটাবেস সিঙ্ক হচ্ছে...";
@@ -617,7 +663,7 @@
         for(let b of branchesToProcess) {
             let safeId = b.id.toString().replace(/[^a-zA-Z0-9]/g, '');
             tableHtml += `
-                <tbody id="bde-tr-${safeId}">
+                <tbody id="bde-tr-${safeId}" data-status="current">
                     <tr>
                         <td style="text-align:left; padding:4px 2px; border:1px solid #bdc3c7; font-weight:bold; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${b.name}</td>
                         <td colspan="4" style="padding:4px 2px; border:1px solid #bdc3c7; color:gray; font-size:10px;">⏳ ফেচিং...</td>
@@ -635,6 +681,9 @@
             if(statusElement) statusElement.innerHTML = `<span style="color:#2980b9;">⏳ AIS ডাটা স্ক্র্যাপ হচ্ছে...</span>`;
             let aisDataMap = await fetchDatesViaInvisibleFrame('AIS', level, targetId, branchesToProcess);
 
+            let currentCount = 0;
+            let overdueCount = 0;
+
             for (let b of branchesToProcess) {
                 let bCodeMatch = b.name.match(/(?:^|-|\s)(\d{3,4})(?:$|-|\s)/);
                 let bCode = bCodeMatch ? bCodeMatch[1] : b.name.replace(/[^a-z]/gi, '').toLowerCase();
@@ -645,19 +694,24 @@
                 let aisLag = calculateLag(aisDate);
                 let misLag = calculateLag(misDate);
 
+                let isOverdue = (typeof misLag === 'number' && misLag > 0) || (typeof aisLag === 'number' && aisLag > 0) || misDate === "N/A" || aisDate === "N/A";
+                if (isOverdue) overdueCount++; else currentCount++;
+
                 let aisLagColor = aisLag > 2 ? '#c0392b' : (aisLag > 0 ? '#d35400' : '#27ae60');
                 let misLagColor = misLag > 2 ? '#c0392b' : (misLag > 0 ? '#d35400' : '#27ae60');
 
                 let isMismatch = (misDate !== "N/A" && aisDate !== "N/A" && misDate !== aisDate);
-                let rowBg = isMismatch ? "background:#fdedec;" : "";
+                let rowBg = isMismatch ? "background:#fdedec;" : (isOverdue ? "background:#fff5f5;" : "");
+                let badge = isOverdue ? `<br><span style="color:#c0392b; font-size:9px; font-weight:bold;">[🔴 বিলম্বে]</span>` : `<span style="color:#27ae60; font-size:9px; font-weight:bold;"> [✅]</span>`;
 
                 let safeId = b.id.toString().replace(/[^a-zA-Z0-9]/g, '');
                 
                 let trElement = document.getElementById(`bde-tr-${safeId}`);
                 if (trElement) {
+                    trElement.setAttribute('data-status', isOverdue ? 'overdue' : 'current');
                     trElement.innerHTML = `
                         <tr style="${rowBg}">
-                            <td style="text-align:left; padding:4px 2px; border:1px solid #bdc3c7; font-weight:bold; color:#2c3e50; word-break:break-word; font-size:10px;">${b.name}</td>
+                            <td style="text-align:left; padding:4px 2px; border:1px solid #bdc3c7; font-weight:bold; color:#2c3e50; word-break:break-word; font-size:10px;">${b.name}${badge}</td>
                             <td style="padding:4px 1px; border:1px solid #bdc3c7; color:${misDate === 'N/A'?'#e74c3c':'#2980b9'}; font-weight:bold; background:#f4f9f9; font-size:10px;">${misDate}</td>
                             <td style="padding:4px 1px; border:1px solid #bdc3c7; color:${misLagColor}; font-weight:bold; background:#f4f9f9;">${misLag}</td>
                             <td style="padding:4px 1px; border:1px solid #bdc3c7; color:${aisDate === 'N/A'?'#e74c3c':'#27ae60'}; font-weight:bold; background:#f9fbf9; font-size:10px;">${aisDate}</td>
@@ -666,6 +720,12 @@
                     `;
                 }
             }
+
+            // 🌟 Update Stats & Show Tabs
+            let statsBox = document.getElementById('bde-stats-box');
+            let tabsBar = document.getElementById('bde-tabs-bar');
+            if (statsBox) { statsBox.style.display = 'flex'; document.getElementById('bde-cnt-current').innerText = currentCount; document.getElementById('bde-cnt-overdue').innerText = overdueCount; }
+            if (tabsBar) { tabsBar.style.display = 'flex'; document.getElementById('bde-lbl-all').innerText = (currentCount + overdueCount); document.getElementById('bde-lbl-overdue').innerText = overdueCount; }
 
             if(statusElement) statusElement.innerHTML = `<span style="color:green;">✅ সব শাখার ডেট ও Lag স্ক্যান সম্পন্ন!</span>`;
             
