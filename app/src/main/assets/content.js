@@ -4,7 +4,7 @@
 (function checkAppUpdate() {
     const CURRENT_VERSION = "1.1"; // বর্তমান অ্যাপ ভার্সন
     
-    // ⚠️ নিচে YOUR_USERNAME এর জায়গায় আপনার গিটহাবের আসল ইউজারনেম বসিয়ে দিন (যেমন: rameez123 ইত্যাদি)
+    // ⚠️ নিচে YOUR_USERNAME এর জায়গায় আপনার গিটহাবের আসল ইউজারনেম বসিয়ে দিন 
     const UPDATE_JSON_URL = "https://raw.githubusercontent.com/rameezrazabd/Microfin_Branch_Date/main/update.json"; 
 
     setTimeout(() => {
@@ -546,11 +546,17 @@
             try {
                 if (!window.XLSX) {
                     let script = document.createElement('script');
-                    script.src = "https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js";
+                    script.src = "https://cdn.jsdelivr.net/npm/xlsx-js-style@1.2.0/dist/xlsx.bundle.js";
                     document.head.appendChild(script);
                     await new Promise((resolve, reject) => {
                         script.onload = resolve;
-                        script.onerror = () => reject(new Error("SheetJS লোড করা সম্ভব হয়নি"));
+                        script.onerror = () => {
+                            let backup = document.createElement('script');
+                            backup.src = "https://unpkg.com/xlsx-js-style@1.2.0/dist/xlsx.bundle.js";
+                            document.head.appendChild(backup);
+                            backup.onload = resolve;
+                            backup.onerror = () => reject(new Error("Excel Style Engine লোড করা সম্ভব হয়নি"));
+                        };
                     });
                 }
 
@@ -562,15 +568,15 @@
                     if (tr && tr.cells.length >= 5) {
                         let isOverdue = tbody.getAttribute('data-status') === 'overdue';
                         let branch = tr.cells[0].innerText.replace(/[\r\n]+/g, ' ').replace(/\[.*?\]/g, '').trim();
-                        let statusText = isOverdue ? "পিছিয়ে আছে (Overdue)" : "সঠিক (Current)";
+                        let statusText = isOverdue ? "🔴 পিছিয়ে আছে" : "✅ সঠিক";
                         
                         let rowObj = {
-                            "শাখার নাম (Branch)": branch,
-                            "স্ট্যাটাস (Status)": statusText,
-                            "MIS ডেট (Date)": tr.cells[1].innerText.trim(),
-                            "MIS Lag": tr.cells[2].innerText.trim(),
-                            "AIS ডেট (Date)": tr.cells[3].innerText.trim(),
-                            "AIS Lag": tr.cells[4].innerText.trim()
+                            "শাখার নাম": branch,
+                            "স্ট্যাটাস": statusText,
+                            "MIS ডেট": tr.cells[1].innerText.trim(),
+                            "MIS বিলম্ব": tr.cells[2].innerText.trim(),
+                            "AIS ডেট": tr.cells[3].innerText.trim(),
+                            "AIS বিলম্ব": tr.cells[4].innerText.trim()
                         };
 
                         allRows.push(rowObj);
@@ -578,13 +584,80 @@
                     }
                 });
 
+                function formatWorksheet(ws, rowCount) {
+                    ws['!cols'] = [
+                        { wch: 38 }, // শাখার নাম
+                        { wch: 16 }, // স্ট্যাটাস
+                        { wch: 15 }, // MIS ডেট
+                        { wch: 12 }, // MIS বিলম্ব
+                        { wch: 15 }, // AIS ডেট
+                        { wch: 12 }  // AIS বিলম্ব
+                    ];
+                
+                    let headerColors = ["2C3E50", "2C3E50", "2980B9", "2980B9", "27AE60", "27AE60"];
+                    let colNames = ['A', 'B', 'C', 'D', 'E', 'F'];
+                
+                    colNames.forEach((col, idx) => {
+                        let cellRef = col + '1';
+                        if (ws[cellRef]) {
+                            ws[cellRef].s = {
+                                fill: { patternType: "solid", fgColor: { rgb: headerColors[idx] } },
+                                font: { name: "Calibri", sz: 11, bold: true, color: { rgb: "FFFFFF" } },
+                                alignment: { horizontal: idx === 0 ? "left" : "center", vertical: "center" },
+                                border: {
+                                    top: { style: "thin", color: { rgb: "BDC3C7" } },
+                                    bottom: { style: "thin", color: { rgb: "BDC3C7" } },
+                                    left: { style: "thin", color: { rgb: "BDC3C7" } },
+                                    right: { style: "thin", color: { rgb: "BDC3C7" } }
+                                }
+                            };
+                        }
+                    });
+                
+                    for (let r = 2; r <= rowCount + 1; r++) {
+                        let statusCell = ws['B' + r];
+                        let isDelayed = statusCell && statusCell.v && (statusCell.v.toString().includes("পিছিয়ে") || statusCell.v.toString().includes("🔴"));
+                        let rowBgColor = isDelayed ? "FFF5F5" : "FFFFFF";
+                
+                        colNames.forEach((col, idx) => {
+                            let cellRef = col + r;
+                            if (ws[cellRef]) {
+                                let fontColor = "2C3E50";
+                                let isBold = false;
+                
+                                if (idx === 1 && isDelayed) { fontColor = "C0392B"; isBold = true; }
+                                else if (idx === 1 && !isDelayed) { fontColor = "27AE60"; isBold = true; }
+                                else if (idx === 3 || idx === 5) {
+                                    let val = parseInt(ws[cellRef].v || "0");
+                                    if (val > 2) { fontColor = "C0392B"; isBold = true; }
+                                    else if (val > 0) { fontColor = "D35400"; isBold = true; }
+                                    else { fontColor = "27AE60"; }
+                                }
+                
+                                ws[cellRef].s = {
+                                    fill: { patternType: "solid", fgColor: { rgb: rowBgColor } },
+                                    font: { name: "Calibri", sz: 10, bold: isBold, color: { rgb: fontColor } },
+                                    alignment: { horizontal: idx === 0 ? "left" : "center", vertical: "center" },
+                                    border: {
+                                        top: { style: "thin", color: { rgb: "D1D8E0" } },
+                                        bottom: { style: "thin", color: { rgb: "D1D8E0" } },
+                                        left: { style: "thin", color: { rgb: "D1D8E0" } },
+                                        right: { style: "thin", color: { rgb: "D1D8E0" } }
+                                    }
+                                };
+                            }
+                        });
+                    }
+                    return ws;
+                }
+
                 let wb = XLSX.utils.book_new();
                 
-                let wsAll = XLSX.utils.json_to_sheet(allRows);
-                XLSX.utils.book_append_sheet(wb, wsAll, "🏢 সকল শাখা (All)");
+                let wsAll = formatWorksheet(XLSX.utils.json_to_sheet(allRows), allRows.length);
+                XLSX.utils.book_append_sheet(wb, wsAll, "🏢 সকল শাখা");
 
-                let wsOverdue = XLSX.utils.json_to_sheet(overdueRows);
-                XLSX.utils.book_append_sheet(wb, wsOverdue, "⚠️ পিছিয়ে আছে (Overdue)");
+                let wsOverdue = formatWorksheet(XLSX.utils.json_to_sheet(overdueRows), overdueRows.length);
+                XLSX.utils.book_append_sheet(wb, wsOverdue, "⚠️ পিছিয়ে আছে");
 
                 let fileName = `Branch_Dates_${new Date().toISOString().split('T')[0]}.xlsx`;
 
@@ -674,11 +747,11 @@
             <table style="width:100%; border-collapse:collapse; font-size:10px; text-align:center; table-layout:fixed;">
                 <thead style="position: sticky; top: 0; z-index:5;">
                     <tr>
-                        <th style="padding:5px 2px; border:1px solid #bdc3c7; background:#2c3e50; color:white; width:46%; text-align:left; padding-left:5px;">Branch Name</th>
-                        <th style="padding:5px 1px; border:1px solid #bdc3c7; background:#2980b9; color:white; width:18%; white-space:nowrap;">MIS</th>
-                        <th style="padding:5px 1px; border:1px solid #bdc3c7; background:#2980b9; color:white; width:9%; white-space:nowrap;">Lag</th>
-                        <th style="padding:5px 1px; border:1px solid #bdc3c7; background:#27ae60; color:white; width:18%; white-space:nowrap;">AIS</th>
-                        <th style="padding:5px 1px; border:1px solid #bdc3c7; background:#27ae60; color:white; width:9%; white-space:nowrap;">Lag</th>
+                        <th style="padding:5px 2px; border:1px solid #bdc3c7; background:#2c3e50; color:white; width:46%; text-align:left; padding-left:5px;">শাখার নাম</th>
+                        <th style="padding:5px 1px; border:1px solid #bdc3c7; background:#2980b9; color:white; width:18%; white-space:nowrap;">MIS ডেট</th>
+                        <th style="padding:5px 1px; border:1px solid #bdc3c7; background:#2980b9; color:white; width:9%; white-space:nowrap;">বিলম্ব</th>
+                        <th style="padding:5px 1px; border:1px solid #bdc3c7; background:#27ae60; color:white; width:18%; white-space:nowrap;">AIS ডেট</th>
+                        <th style="padding:5px 1px; border:1px solid #bdc3c7; background:#27ae60; color:white; width:9%; white-space:nowrap;">বিলম্ব</th>
                     </tr>
                 </thead>
         `;
