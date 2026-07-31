@@ -4,7 +4,7 @@
 (function checkAppUpdate() {
     const CURRENT_VERSION = "1.1"; // বর্তমান অ্যাপ ভার্সন
     
-    // ⚠️ নিচে YOUR_USERNAME এর জায়গায় আপনার গিটহাবের আসল ইউজারনেম বসিয়ে দিন 
+    // ⚠️ নিচে YOUR_USERNAME এর জায়গায় আপনার গিটহাবের আসল ইউজারনেম বসিয়ে দিন (যেমন: rameez123 ইত্যাদি)
     const UPDATE_JSON_URL = "https://raw.githubusercontent.com/rameezrazabd/Microfin_Branch_Date/main/update.json"; 
 
     setTimeout(() => {
@@ -457,7 +457,7 @@
 
         panel.innerHTML = `
             <div id="bde-drag-header" style="background:#2c3e50; color:white; padding:7px 12px; display:flex; justify-content:space-between; align-items:center; cursor:move; flex-shrink:0;">
-                <strong style="font-size:13px;">📅 Branch Date Extractor v3.1</strong>
+                <strong style="font-size:13px;">📅 Branch Date Extractor</strong>
                 <button id="bde-close-date-panel" style="background:none; border:none; color:#e74c3c; font-size:16px; cursor:pointer; font-weight:bold;">✖</button>
             </div>
 
@@ -536,36 +536,72 @@
 
         document.getElementById('bde-start-fetch-btn').onclick = startFetchingDates;
 
-        document.getElementById('bde-export-excel-btn').onclick = () => {
+        document.getElementById('bde-export-excel-btn').onclick = async () => {
             let table = document.querySelector("#bde-table-output table");
             if (!table) return;
 
-            let csvContent = "\uFEFF"; // UTF-8 BOM for perfect Bengali & Emoji support
-            table.querySelectorAll('tr').forEach(row => {
-                if (row.style.display === 'none' || (row.parentElement && row.parentElement.style.display === 'none')) return;
-                let rowData = [];
-                row.querySelectorAll('th, td').forEach(col => {
-                    let text = col.innerText || col.textContent || "";
-                    text = text.replace(/[\r\n]+/g, ' ').replace(/"/g, '""').trim();
-                    rowData.push(`"${text}"`);
+            let statusMsg = document.getElementById('bde-status-msg');
+            if(statusMsg) statusMsg.innerHTML = "<span style='color:#2980b9;'>⏳ Excel (.xlsx) তৈরি হচ্ছে...</span>";
+
+            try {
+                if (!window.XLSX) {
+                    let script = document.createElement('script');
+                    script.src = "https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js";
+                    document.head.appendChild(script);
+                    await new Promise((resolve, reject) => {
+                        script.onload = resolve;
+                        script.onerror = () => reject(new Error("SheetJS লোড করা সম্ভব হয়নি"));
+                    });
+                }
+
+                let allRows = [];
+                let overdueRows = [];
+                
+                table.querySelectorAll('tbody[id^="bde-tr-"]').forEach(tbody => {
+                    let tr = tbody.querySelector('tr');
+                    if (tr && tr.cells.length >= 5) {
+                        let isOverdue = tbody.getAttribute('data-status') === 'overdue';
+                        let branch = tr.cells[0].innerText.replace(/[\r\n]+/g, ' ').replace(/\[.*?\]/g, '').trim();
+                        let statusText = isOverdue ? "পিছিয়ে আছে (Overdue)" : "সঠিক (Current)";
+                        
+                        let rowObj = {
+                            "শাখার নাম (Branch)": branch,
+                            "স্ট্যাটাস (Status)": statusText,
+                            "MIS ডেট (Date)": tr.cells[1].innerText.trim(),
+                            "MIS Lag": tr.cells[2].innerText.trim(),
+                            "AIS ডেট (Date)": tr.cells[3].innerText.trim(),
+                            "AIS Lag": tr.cells[4].innerText.trim()
+                        };
+
+                        allRows.push(rowObj);
+                        if (isOverdue) overdueRows.push(rowObj);
+                    }
                 });
-                if (rowData.length > 0) csvContent += rowData.join(",") + "\r\n";
-            });
 
-            let fileName = `Branch_Dates_${new Date().toISOString().split('T')[0]}.csv`;
+                let wb = XLSX.utils.book_new();
+                
+                let wsAll = XLSX.utils.json_to_sheet(allRows);
+                XLSX.utils.book_append_sheet(wb, wsAll, "🏢 সকল শাখা (All)");
 
-            if (window.AndroidDownloader && window.AndroidDownloader.saveExcel) {
-                window.AndroidDownloader.saveExcel(csvContent, fileName);
-            } else {
-                let blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-                let url = URL.createObjectURL(blob);
-                let link = document.createElement("a");
-                link.href = url;
-                link.download = fileName;
-                document.body.appendChild(link);
-                link.click();
-                document.body.removeChild(link);
-                URL.revokeObjectURL(url);
+                let wsOverdue = XLSX.utils.json_to_sheet(overdueRows);
+                XLSX.utils.book_append_sheet(wb, wsOverdue, "⚠️ পিছিয়ে আছে (Overdue)");
+
+                let fileName = `Branch_Dates_${new Date().toISOString().split('T')[0]}.xlsx`;
+
+                if (window.AndroidDownloader && window.AndroidDownloader.saveBase64File) {
+                    let base64Data = XLSX.write(wb, { bookType: 'xlsx', type: 'base64' });
+                    window.AndroidDownloader.saveBase64File(base64Data, fileName, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+                } else if (window.AndroidDownloader && window.AndroidDownloader.saveExcel) {
+                    let csvContent = "\uFEFF" + XLSX.utils.sheet_to_csv(wsAll);
+                    window.AndroidDownloader.saveExcel(csvContent, `Branch_Dates_${new Date().toISOString().split('T')[0]}.csv`);
+                } else {
+                    XLSX.writeFile(wb, fileName);
+                }
+
+                if(statusMsg) statusMsg.innerHTML = "<span style='color:green;'>✅ Excel (.xlsx) সফলভাবে ডাউনলোড হয়েছে!</span>";
+            } catch(err) {
+                console.error(err);
+                if(statusMsg) statusMsg.innerHTML = `<span style='color:red;'>❌ Excel ডাউনলোডে সমস্যা: ${err.message}</span>`;
             }
         };
 
@@ -638,11 +674,11 @@
             <table style="width:100%; border-collapse:collapse; font-size:10px; text-align:center; table-layout:fixed;">
                 <thead style="position: sticky; top: 0; z-index:5;">
                     <tr>
-                        <th style="padding:5px 3px; border:1px solid #bdc3c7; background:#2c3e50; color:white; width:36%; white-space:nowrap; overflow:hidden;">Branch</th>
-                        <th style="padding:5px 1px; border:1px solid #bdc3c7; background:#2980b9; color:white; width:21%; white-space:nowrap;">MIS</th>
-                        <th style="padding:5px 1px; border:1px solid #bdc3c7; background:#2980b9; color:white; width:11%; white-space:nowrap;">Lag</th>
-                        <th style="padding:5px 1px; border:1px solid #bdc3c7; background:#27ae60; color:white; width:21%; white-space:nowrap;">AIS</th>
-                        <th style="padding:5px 1px; border:1px solid #bdc3c7; background:#27ae60; color:white; width:11%; white-space:nowrap;">Lag</th>
+                        <th style="padding:5px 2px; border:1px solid #bdc3c7; background:#2c3e50; color:white; width:46%; text-align:left; padding-left:5px;">Branch Name</th>
+                        <th style="padding:5px 1px; border:1px solid #bdc3c7; background:#2980b9; color:white; width:18%; white-space:nowrap;">MIS</th>
+                        <th style="padding:5px 1px; border:1px solid #bdc3c7; background:#2980b9; color:white; width:9%; white-space:nowrap;">Lag</th>
+                        <th style="padding:5px 1px; border:1px solid #bdc3c7; background:#27ae60; color:white; width:18%; white-space:nowrap;">AIS</th>
+                        <th style="padding:5px 1px; border:1px solid #bdc3c7; background:#27ae60; color:white; width:9%; white-space:nowrap;">Lag</th>
                     </tr>
                 </thead>
         `;
@@ -652,7 +688,7 @@
             tableHtml += `
                 <tbody id="bde-tr-${safeId}" data-status="current">
                     <tr>
-                        <td style="text-align:left; padding:3px 4px; border:1px solid #bdc3c7; font-weight:bold; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width:0; font-size:10px;">${b.name}</td>
+                        <td style="text-align:left; padding:4px 3px; border:1px solid #bdc3c7; font-weight:bold; white-space:normal; line-height:1.25; font-size:10px;">${b.name}</td>
                         <td colspan="4" style="padding:3px 2px; border:1px solid #bdc3c7; color:gray; font-size:10px; white-space:nowrap;">⏳ ফেচিং...</td>
                     </tr>
                 </tbody>
@@ -690,7 +726,7 @@
                 let isMismatch = (misDate !== "N/A" && aisDate !== "N/A" && misDate !== aisDate);
                 let rowBg = isMismatch ? "background:#fdedec;" : (isOverdue ? "background:#fff5f5;" : "");
                 
-                let badgeHtml = isOverdue ? `<span style="color:#c0392b; font-weight:bold;">[🔴 বিলম্ব]</span> ` : `<span style="color:#27ae60; font-weight:bold;">[✅]</span> `;
+                let badgeHtml = isOverdue ? `<span style="color:#c0392b; font-weight:bold;">[🔴 বিলম্ব] </span>` : `<span style="color:#27ae60; font-weight:bold;">[✅] </span>`;
                 let cleanName = `${badgeHtml}${b.name}`;
 
                 let safeId = b.id.toString().replace(/[^a-zA-Z0-9]/g, '');
@@ -700,7 +736,7 @@
                     trElement.setAttribute('data-status', isOverdue ? 'overdue' : 'current');
                     trElement.innerHTML = `
                         <tr style="${rowBg}">
-                            <td title="${b.name}" style="text-align:left; padding:3px 3px; border:1px solid #bdc3c7; font-weight:bold; color:#2c3e50; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:0; font-size:10px;">${cleanName}</td>
+                            <td style="text-align:left; padding:4px 3px; border:1px solid #bdc3c7; font-weight:bold; color:#2c3e50; white-space:normal; line-height:1.25; font-size:10px;">${cleanName}</td>
                             <td style="padding:3px 1px; border:1px solid #bdc3c7; color:${misDate === 'N/A'?'#e74c3c':'#2980b9'}; font-weight:bold; background:#f4f9f9; font-size:9.5px; white-space:nowrap; overflow:hidden;">${misDate}</td>
                             <td style="padding:3px 1px; border:1px solid #bdc3c7; color:${misLagColor}; font-weight:bold; background:#f4f9f9; font-size:10px; white-space:nowrap;">${misLag}</td>
                             <td style="padding:3px 1px; border:1px solid #bdc3c7; color:${aisDate === 'N/A'?'#e74c3c':'#27ae60'}; font-weight:bold; background:#f9fbf9; font-size:9.5px; white-space:nowrap; overflow:hidden;">${aisDate}</td>
