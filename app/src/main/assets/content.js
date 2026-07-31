@@ -451,13 +451,13 @@
 
         const panel = document.createElement('div');
         panel.id = 'bde-ghost-date-panel';
-        panel.style.cssText = 'position: fixed; top: 10px; bottom: 70px; left: 50%; transform: translateX(-50%); background: #fff; border: 2px solid #2c3e50; border-radius: 8px; box-shadow: 0 10px 30px rgba(0,0,0,0.45); width: 97vw; max-width: 680px; display:flex; flex-direction:column; font-family: Arial; z-index: 999999; overflow: hidden;';
+        panel.style.cssText = 'position: fixed; top: 5px; bottom: 35px; left: 50%; transform: translateX(-50%); background: #fff; border: 2px solid #2c3e50; border-radius: 8px; box-shadow: 0 10px 30px rgba(0,0,0,0.45); width: 97vw; max-width: 680px; display:flex; flex-direction:column; font-family: Arial; z-index: 999999; overflow: hidden;';
 
         document.body.appendChild(panel);
 
         panel.innerHTML = `
-            <div id="bde-drag-header" style="background:#2c3e50; color:white; padding:8px 12px; display:flex; justify-content:space-between; align-items:center; cursor:move; flex-shrink:0;">
-                <strong style="font-size:13px;">📅 Branch Date Extractor v3.0</strong>
+            <div id="bde-drag-header" style="background:#2c3e50; color:white; padding:7px 12px; display:flex; justify-content:space-between; align-items:center; cursor:move; flex-shrink:0;">
+                <strong style="font-size:13px;">📅 Branch Date Extractor v3.1</strong>
                 <button id="bde-close-date-panel" style="background:none; border:none; color:#e74c3c; font-size:16px; cursor:pointer; font-weight:bold;">✖</button>
             </div>
 
@@ -476,24 +476,12 @@
                     </div>
                 </div>
 
-                <button id="bde-start-fetch-btn" style="width:100%; background:#27ae60; color:white; border:none; padding:6px; font-weight:bold; font-size:13px; border-radius:4px; cursor:pointer; margin-bottom:4px; flex-shrink:0;">🚀 Fetch Dates (Auto Engine)</button>
+                <button id="bde-start-fetch-btn" style="width:100%; background:#27ae60; color:white; border:none; padding:6px; font-weight:bold; font-size:13px; border-radius:4px; cursor:pointer; margin-bottom:5px; flex-shrink:0;">🚀 Fetch Dates (Auto Engine)</button>
                 
-                <!-- 🌟 টপ সামারি বক্স (Top Stats Card) -->
-                <div id="bde-stats-box" style="display:flex; gap:6px; margin-bottom:6px; flex-shrink:0;">
-                    <div style="flex:1; background:#e8f8f5; border:1px solid #2ecc71; border-radius:4px; padding:4px; text-align:center;">
-                        <div style="font-size:10px; color:#27ae60; font-weight:bold;">✅ কারেন্ট ডেটে আছে</div>
-                        <div id="bde-cnt-current" style="font-size:15px; font-weight:bold; color:#2c3e50;">0</div>
-                    </div>
-                    <div id="bde-card-overdue" style="flex:1; background:#fdedec; border:1px solid #e74c3c; border-radius:4px; padding:4px; text-align:center; cursor:pointer; box-shadow:0 2px 5px rgba(231,76,60,0.2);">
-                        <div style="font-size:10px; color:#c0392b; font-weight:bold;">⚠️ পিছিয়ে আছে (Overdue)</div>
-                        <div id="bde-cnt-overdue" style="font-size:15px; font-weight:bold; color:#c0392b;">0</div>
-                    </div>
-                </div>
-
-                <!-- 🌟 ২টা লাইভ ট্যাব (Segmented Switcher) -->
-                <div id="bde-tabs-bar" style="display:flex; gap:4px; margin-bottom:4px; flex-shrink:0;">
-                    <button id="bde-tab-all" style="flex:1; background:#2980b9; color:white; border:none; padding:6px; border-radius:4px; font-size:11px; font-weight:bold; cursor:pointer;">🏢 সকল শাখা (<span id="bde-lbl-all">0</span>)</button>
-                    <button id="bde-tab-overdue" style="flex:1; background:#ecf0f1; color:#7f8c8d; border:none; padding:6px; border-radius:4px; font-size:11px; font-weight:bold; cursor:pointer;">⚠️ শুধু পিছিয়ে থাকা (<span id="bde-lbl-overdue">0</span>)</button>
+                <!-- 🌟 স্লিম স্মার্ট ২-ট্যাব (বক্স ও ট্যাব একত্রিত করা হলো জায়গা বাঁচাতে) -->
+                <div id="bde-tabs-bar" style="display:flex; gap:6px; margin-bottom:5px; flex-shrink:0;">
+                    <button id="bde-tab-all" style="flex:1; background:#2980b9; color:white; border:none; padding:6px; border-radius:4px; font-size:11.5px; font-weight:bold; cursor:pointer; box-shadow:0 1px 3px rgba(0,0,0,0.2);">🏢 সকল শাখা (<span id="bde-lbl-all">০</span>)</button>
+                    <button id="bde-tab-overdue" style="flex:1; background:#fdedec; color:#c0392b; border:1px solid #e74c3c; padding:6px; border-radius:4px; font-size:11.5px; font-weight:bold; cursor:pointer; box-shadow:0 1px 3px rgba(231,76,60,0.15);">⚠️ পিছিয়ে আছে (<span id="bde-lbl-overdue">০</span>)</button>
                 </div>
 
                 <div id="bde-status-msg" style="font-size:11px; font-weight:bold; color:#d35400; text-align:center; min-height:16px; flex-shrink:0;"></div>
@@ -510,15 +498,14 @@
 
         let tabAll = document.getElementById('bde-tab-all');
         let tabOverdue = document.getElementById('bde-tab-overdue');
-        let cardOverdue = document.getElementById('bde-card-overdue');
 
         function filterTableRows(showOnlyOverdue) {
             if (showOnlyOverdue) {
-                tabAll.style.background = '#ecf0f1'; tabAll.style.color = '#7f8c8d';
-                tabOverdue.style.background = '#e74c3c'; tabOverdue.style.color = 'white';
+                tabAll.style.background = '#ecf0f1'; tabAll.style.color = '#7f8c8d'; tabAll.style.border = '1px solid #bdc3c7';
+                tabOverdue.style.background = '#e74c3c'; tabOverdue.style.color = 'white'; tabOverdue.style.border = 'none';
             } else {
-                tabAll.style.background = '#2980b9'; tabAll.style.color = 'white';
-                tabOverdue.style.background = '#ecf0f1'; tabOverdue.style.color = '#7f8c8d';
+                tabAll.style.background = '#2980b9'; tabAll.style.color = 'white'; tabAll.style.border = 'none';
+                tabOverdue.style.background = '#fdedec'; tabOverdue.style.color = '#c0392b'; tabOverdue.style.border = '1px solid #e74c3c';
             }
             document.querySelectorAll('#bde-table-output tbody[id^="bde-tr-"]').forEach(tbody => {
                 let status = tbody.getAttribute('data-status');
@@ -530,10 +517,9 @@
             });
         }
 
-        if (tabAll && tabOverdue && cardOverdue) {
+        if (tabAll && tabOverdue) {
             tabAll.onclick = () => filterTableRows(false);
             tabOverdue.onclick = () => filterTableRows(true);
-            cardOverdue.onclick = () => filterTableRows(true);
         }
 
         document.getElementById('bde-sync-btn').onclick = () => {
@@ -721,11 +707,13 @@
                 }
             }
 
-            // 🌟 Update Stats & Show Tabs
-            let statsBox = document.getElementById('bde-stats-box');
+            // 🌟 Update Slim Tabs Counts
             let tabsBar = document.getElementById('bde-tabs-bar');
-            if (statsBox) { statsBox.style.display = 'flex'; document.getElementById('bde-cnt-current').innerText = currentCount; document.getElementById('bde-cnt-overdue').innerText = overdueCount; }
-            if (tabsBar) { tabsBar.style.display = 'flex'; document.getElementById('bde-lbl-all').innerText = (currentCount + overdueCount); document.getElementById('bde-lbl-overdue').innerText = overdueCount; }
+            if (tabsBar) {
+                tabsBar.style.display = 'flex';
+                document.getElementById('bde-lbl-all').innerText = (currentCount + overdueCount);
+                document.getElementById('bde-lbl-overdue').innerText = overdueCount;
+            }
 
             if(statusElement) statusElement.innerHTML = `<span style="color:green;">✅ সব শাখার ডেট ও Lag স্ক্যান সম্পন্ন!</span>`;
             
