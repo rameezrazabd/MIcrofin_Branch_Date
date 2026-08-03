@@ -1,11 +1,22 @@
 // ========================================================================
+// 🧹 CLEAN UP LEGACY SNAPSHOT MEMORY (No persistent storage for Extension)
+// ========================================================================
+try {
+    localStorage.removeItem('mf_cached_zones');
+    localStorage.removeItem('mf_cached_areas');
+    localStorage.removeItem('mf_cached_branches');
+    localStorage.removeItem('mf_cached_dates_v2');
+    localStorage.removeItem('mf_user_type');
+} catch(e) {}
+
+// ========================================================================
 // 🔔 0. AUTO UPDATE NOTIFICATION SYSTEM
 // ========================================================================
 (function checkAppUpdate() {
-    const CURRENT_VERSION = "1.1"; // বর্তমান অ্যাপ ভার্সন
+    const CURRENT_VERSION = "1.0"; // বর্তমান অ্যাপ ভার্সন
     
     // ⚠️ নিচে YOUR_USERNAME এর জায়গায় আপনার গিটহাবের আসল ইউজারনেম বসিয়ে দিন (যেমন: rameez123 ইত্যাদি)
-    const UPDATE_JSON_URL = "https://raw.githubusercontent.com/rameezrazabd/Microfin_Branch_Date/main/update.json"; 
+    const UPDATE_JSON_URL = "https://raw.githubusercontent.com/User_Name/Microfin_Branch_Date/main/update.json"; 
 
     setTimeout(() => {
         fetch(UPDATE_JSON_URL + "?t=" + new Date().getTime())
@@ -55,7 +66,266 @@
 })();
 
 // ========================================================================
-// EXTENSION 1: 📅 Branch Date Extractor V2.8 (Compact Mobile Edition)
+// 🌐 0.5 CENTRAL HIERARCHY MASTER SCANNER (UNIFIED SYSTEM SYNC FOR ALL UIs)
+// ========================================================================
+(function() {
+    'use strict';
+    
+    window._isCentralSyncRunning = false;
+
+    function triggerVueChange(el, value, win) {
+        if (!el) return;
+        el.value = value;
+        el.dispatchEvent(new Event('input', { bubbles: true }));
+        el.dispatchEvent(new Event('change', { bubbles: true }));
+        if (win && win.jQuery) win.jQuery(el).trigger('change');
+    }
+
+    function findSelect(doc, name) {
+        if (!doc) return null;
+        return doc.getElementById(name) || doc.querySelector(`select[name="${name}"]`);
+    }
+
+    async function waitForSelect(doc, name, minLen = 1) {
+        for (let i = 0; i < 40; i++) {
+            let el = findSelect(doc, name);
+            if (el && el.options && el.options.length > minLen) return el;
+            await new Promise(r => setTimeout(r, 250));
+        }
+        return findSelect(doc, name);
+    }
+
+    window.runGlobalHierarchySync = function(force = false, callback = null) {
+        if (!force && sessionStorage.getItem('mf_global_hierarchy_synced') === 'TRUE') {
+            if (callback) callback(true);
+            return;
+        }
+        if (window._isCentralSyncRunning) {
+            if (callback) {
+                window.addEventListener('mf_central_sync_completed', () => callback(true), { once: true });
+            }
+            return;
+        }
+        window._isCentralSyncRunning = true;
+
+        let toast = document.getElementById('central-sync-toast');
+        if (!toast) {
+            toast = document.createElement('div');
+            toast.id = 'central-sync-toast';
+            toast.style.cssText = 'position:fixed; top:20px; right:20px; background:#f39c12; color:white; padding:12px 18px; z-index:9999999; border-radius:6px; font-weight:bold; font-size:13px; font-family:Arial; box-shadow:0 6px 16px rgba(0,0,0,0.35); transition:all 0.3s ease; display:flex; align-items:center; gap:8px;';
+            document.body.appendChild(toast);
+        }
+        toast.style.background = '#f39c12';
+        toast.innerHTML = '<span>⚙️ Central System Sync: Scanning Zones, Areas & Branches...</span>';
+
+        const iframe = document.createElement('iframe');
+        iframe.style.cssText = 'position:fixed; top:0px; left:-9999px; width:1200px; height:800px; border:none; z-index:-1;';
+        iframe.src = window.location.origin + window.location.pathname + '#/reports/po-mis-reports/po-mis-1-index';
+        document.body.appendChild(iframe);
+
+        let timeout = setTimeout(() => {
+            if (document.body.contains(iframe)) iframe.remove();
+            window._isCentralSyncRunning = false;
+            toast.style.background = '#e74c3c';
+            toast.innerHTML = '<span>⚠️ Sync Taking Long... Will Retry automatically!</span>';
+            setTimeout(() => toast.remove(), 3000);
+            if (callback) callback(false);
+        }, 45000);
+
+        iframe.onload = () => {
+            setTimeout(async () => {
+                try {
+                    let doc = iframe.contentDocument || iframe.contentWindow.document;
+                    let win = iframe.contentWindow;
+
+                    let reportLvl = null, branchSel = null;
+                    let formReadyCount = 0;
+                    for (let i = 0; i < 40; i++) {
+                        reportLvl = findSelect(doc, 'cbo_report_level');
+                        branchSel = findSelect(doc, 'cbo_branch');
+                        if (reportLvl || branchSel) break;
+
+                        let anyElement = doc.querySelector('select, button, input, label, table, .card, .panel, h1, h2, h3, h4');
+                        if (anyElement) {
+                            formReadyCount++;
+                            if (formReadyCount >= 5) break;
+                        }
+                        await new Promise(r => setTimeout(r, 300));
+                    }
+
+                    let uType = 'BRANCH';
+                    let zones = [], areas = [], branches = [];
+                    let zMap = {}, aMap = {};
+                    let currentZone = "Unknown Zone";
+
+                    if (reportLvl && reportLvl.options && reportLvl.options.length > 0) {
+                        uType = 'HO';
+                        let hasZone = Array.from(reportLvl.options).some(o => o.value === '3');
+                        if (hasZone) {
+                            triggerVueChange(reportLvl, '3', win);
+                            await new Promise(r => setTimeout(r, 800));
+                            let zoneSel = await waitForSelect(doc, 'cbo_zone');
+                            if (zoneSel && zoneSel.options) {
+                                Array.from(zoneSel.options).forEach(opt => {
+                                    if (opt.value && opt.value !== '-1' && !opt.text.includes('--')) {
+                                        if (!opt.disabled && !opt.value.includes('@@@')) {
+                                            currentZone = opt.text.trim();
+                                            zones.push({ id: opt.value, name: currentZone });
+                                        } else if (opt.disabled && opt.value.includes('@@@')) {
+                                            let areaName = opt.text.replace(/\u00A0/g, '').replace(/@@@/g, '').trim();
+                                            if (areaName) zMap[areaName] = currentZone;
+                                        }
+                                    }
+                                });
+                            }
+                        }
+
+                        let hasArea = Array.from(reportLvl.options).some(o => o.value === '2');
+                        if (hasArea) {
+                            triggerVueChange(reportLvl, '2', win);
+                            await new Promise(r => setTimeout(r, 800));
+                            let areaSel = await waitForSelect(doc, 'cbo_area');
+                            if (areaSel && areaSel.options) {
+                                let currentArea = "Unknown Area";
+                                Array.from(areaSel.options).forEach(opt => {
+                                    if (opt.value && opt.value !== '-1' && !opt.text.includes('--')) {
+                                        if (!opt.disabled && !opt.value.includes('@@@')) {
+                                            currentArea = opt.text.trim();
+                                            let pZone = zMap[currentArea] || currentZone || "Unknown Zone";
+                                            areas.push({ id: opt.value, name: currentArea, zone: pZone });
+                                        } else if (opt.disabled && opt.value.includes('@@@')) {
+                                            let bId = opt.value.split('##')[1] || opt.value.replace(/[^0-9]/g, '');
+                                            let bNameClean = opt.text.replace(/\u00A0/g, '').replace(/@@@/g, '').trim();
+                                            if (bId) {
+                                                aMap[bId] = currentArea;
+                                                zMap[bId] = zMap[currentArea] || currentZone || "Unknown Zone";
+                                            }
+                                            if (bNameClean) {
+                                                aMap[bNameClean] = currentArea;
+                                                zMap[bNameClean] = zMap[currentArea] || currentZone || "Unknown Zone";
+                                            }
+                                        }
+                                    }
+                                });
+                            }
+                        }
+
+                        let hasBranch = Array.from(reportLvl.options).some(o => o.value === '1');
+                        if (hasBranch) {
+                            triggerVueChange(reportLvl, '1', win);
+                            await new Promise(r => setTimeout(r, 800));
+                            let bSel = await waitForSelect(doc, 'cbo_branch');
+                            if (bSel && bSel.options) {
+                                Array.from(bSel.options).forEach(opt => {
+                                    if (opt.value && opt.value !== '-1' && !opt.text.includes('--')) {
+                                        let bName = opt.text.trim();
+                                        if (!opt.disabled && !opt.value.includes('@@@') && !/\b(area|zone)\b/i.test(bName)) {
+                                            let bId = opt.value;
+                                            let bArea = aMap[bId] || aMap[bName] || "Unknown Area";
+                                            let bZone = zMap[bArea] || zMap[bId] || currentZone || "Unknown Zone";
+                                            branches.push({ id: bId, name: bName, area: bArea, zone: bZone });
+                                            aMap[bId] = bArea;
+                                            zMap[bId] = bZone;
+                                        }
+                                    }
+                                });
+                            }
+                        }
+                    } else if (branchSel && branchSel.options && branchSel.options.length > 2) {
+                        uType = 'AREA';
+                        let bSel = await waitForSelect(doc, 'cbo_branch', 0);
+                        if (bSel && bSel.options) {
+                            Array.from(bSel.options).forEach(opt => {
+                                if (opt.value && opt.value !== '-1' && opt.value !== '' && !opt.text.includes('--')) {
+                                    let bName = opt.text.trim();
+                                    if (!opt.disabled && !opt.value.includes('@@@') && !/\b(area|zone)\b/i.test(bName)) {
+                                        branches.push({ id: opt.value, name: bName, area: 'Assigned Area', zone: 'Assigned Zone' });
+                                        aMap[opt.value] = 'Assigned Area';
+                                        zMap[opt.value] = 'Assigned Zone';
+                                    }
+                                }
+                            });
+                        }
+                    } else {
+                        uType = 'BRANCH';
+                        let myName = "My Branch";
+                        let myId = "SELF";
+                        if (branchSel && branchSel.options && branchSel.options.length > 0) {
+                            Array.from(branchSel.options).forEach(opt => {
+                                if (opt.value && opt.value !== '-1' && opt.value !== '' && !opt.text.includes('--')) {
+                                    myId = opt.value;
+                                    myName = opt.text.trim();
+                                }
+                            });
+                        }
+                        if (myId === "SELF" || myName === "My Branch") {
+                            let bInfo = doc.querySelector('.branch_info');
+                            if (bInfo && bInfo.innerText.includes('Branch:')) {
+                                let m = bInfo.innerText.match(/Branch:\s*(.*?)\s*(Monday|Tuesday|Wednesday|Thursday|Friday|Saturday|Sunday)/i);
+                                if (m && m[1]) myName = m[1].trim();
+                            }
+                        }
+                        branches = [{ id: myId, name: myName, area: 'Branch', zone: 'Branch' }];
+                    }
+
+                    if (branches.length > 0) {
+                        // Save simultaneously for ALL UIs & extensions
+                        sessionStorage.setItem('mf_user_type', uType);
+                        sessionStorage.setItem('mf_cached_zones', JSON.stringify(zones));
+                        sessionStorage.setItem('mf_cached_areas', JSON.stringify(areas));
+                        sessionStorage.setItem('mf_cached_branches', JSON.stringify(branches));
+                        sessionStorage.setItem('mf_auto_synced', 'true');
+                        sessionStorage.setItem('mf_global_hierarchy_synced', 'TRUE');
+
+                        localStorage.setItem('microfin_role', uType === 'AREA' ? 'ZONE' : uType);
+                        localStorage.setItem('microfin_branch_list', JSON.stringify(branches));
+                        localStorage.setItem('microfin_aMap', JSON.stringify(aMap));
+                        localStorage.setItem('microfin_zMap', JSON.stringify(zMap));
+                        localStorage.setItem('microfin_sync_status', 'DONE');
+
+                        toast.style.background = '#27ae60';
+                        toast.innerHTML = `<span>✅ Central Sync Complete! (${branches.length} Branches Ready)</span>`;
+                        setTimeout(() => toast.remove(), 2500);
+                        window.dispatchEvent(new CustomEvent('mf_central_sync_completed'));
+                        if (callback) callback(true);
+                    } else {
+                        throw new Error("No branches found during scan");
+                    }
+
+                    clearTimeout(timeout);
+                    if (document.body.contains(iframe)) iframe.remove();
+                    window._isCentralSyncRunning = false;
+                } catch (err) {
+                    console.error("Central Sync Error:", err);
+                    clearTimeout(timeout);
+                    if (document.body.contains(iframe)) iframe.remove();
+                    window._isCentralSyncRunning = false;
+                    toast.style.background = '#e74c3c';
+                    toast.innerHTML = '<span>⚠️ Temporary Sync Glitch. Will retry soon!</span>';
+                    setTimeout(() => toast.remove(), 3000);
+                    if (callback) callback(false);
+                }
+            }, 800);
+        };
+    };
+
+    // Auto-detect login & dashboard entry to fire scan immediately
+    setInterval(() => {
+        if (window !== window.top) return;
+        if (window.location.hash.includes('login') || window.location.hash.includes('logout')) {
+            sessionStorage.removeItem('mf_global_hierarchy_synced');
+            sessionStorage.removeItem('mf_auto_synced');
+            localStorage.removeItem('microfin_sync_status');
+        } else if (window.location.hash.includes('dashboard')) {
+            if (sessionStorage.getItem('mf_global_hierarchy_synced') !== 'TRUE' && !window._isCentralSyncRunning) {
+                window.runGlobalHierarchySync(false);
+            }
+        }
+    }, 1000);
+})();
+
+// ========================================================================
+// EXTENSION 1: 📅 Branch Date Extractor (Compact Mobile Edition)
 // ========================================================================
 (function() {
     'use strict';
@@ -69,10 +339,10 @@
     }
 
     async function waitForOptions(doc, selector, minLen = 1) {
-        for(let i=0; i<30; i++) {
+        for(let i=0; i<80; i++) {
             let el = doc.querySelector(selector);
             if (el && el.options.length > minLen) return el;
-            await new Promise(r => setTimeout(r, 500));
+            await new Promise(r => setTimeout(r, 100));
         }
         return doc.querySelector(selector);
     }
@@ -106,11 +376,13 @@
             let iframe = document.createElement('iframe');
             iframe.style.cssText = 'position:fixed; top:0; left:0; width:1000px; height:800px; opacity:0.001; border:none; z-index:-999; pointer-events:none;';
 
-            let targetHash = mode === 'MIS' ? '#/mis/dashboard' : '#/ais/dashboard';
+            let uTypePrep = sessionStorage.getItem('mf_user_type') || localStorage.getItem('mf_user_type') || 'HO';
+            let isBranchRolePrep = (uTypePrep === 'BRANCH' || targetId === 'SELF' || (branchesToProcess && branchesToProcess.length === 1 && branchesToProcess[0].id === 'SELF'));
+            let targetHash = mode === 'MIS' ? '#/mis/dashboard' : (isBranchRolePrep ? '#/reports/acc-balance-sheets/balance-sheet-report-filter' : '#/ais/dashboard');
             iframe.src = window.location.origin + window.location.pathname + targetHash;
             document.body.appendChild(iframe);
 
-            let timeout = setTimeout(() => { iframe.remove(); resolve({}); }, 45000);
+            let timeout = setTimeout(() => { iframe.remove(); resolve({}); }, 60000);
             let isProcessed = false;
 
             iframe.onload = () => {
@@ -120,11 +392,11 @@
                     try {
                         let doc = iframe.contentDocument || iframe.contentWindow.document;
                         let win = iframe.contentWindow;
-                        let uType = localStorage.getItem('mf_user_type') || 'HO';
+                        let uType = sessionStorage.getItem('mf_user_type') || localStorage.getItem('mf_user_type') || 'HO';
                         let isBranchRole = (uType === 'BRANCH' || targetId === 'SELF' || (branchesToProcess && branchesToProcess.length === 1 && branchesToProcess[0].id === 'SELF'));
 
                         if (!isBranchRole) {
-                            for(let i=0; i<6; i++) {
+                            for(let i=0; i<5; i++) {
                                 let reportLvlDropdown = doc.querySelector('select[name="cbo_report_level"]');
                                 let branchDropdown = doc.querySelector('select[name="cbo_branch"]');
                                 let searchBtn = doc.querySelector('button[type="submit"]') || doc.querySelector('.btn-primary') || doc.querySelector('.btn-success');
@@ -152,11 +424,11 @@
                                     if (searchBtn) {
                                         searchBtn.removeAttribute('disabled');
                                         searchBtn.click();
-                                        await new Promise(r => setTimeout(r, 1500));
+                                        await new Promise(r => setTimeout(r, 1200));
                                     }
                                     break;
                                 }
-                                await new Promise(r => setTimeout(r, 500));
+                                await new Promise(r => setTimeout(r, 350));
                             }
                         }
 
@@ -181,7 +453,7 @@
                                     if (Date.now() - start > maxWaitMs) {
                                         clearInterval(timer); resolve(false);
                                     }
-                                }, 500);
+                                }, 400);
                             });
                         }
 
@@ -199,20 +471,30 @@
                         let pollCount = 0;
                         let poll = setInterval(() => {
                             pollCount++;
-                            if (pollCount > 35) {
+                            if (pollCount > 120) {
                                 clearInterval(poll); clearTimeout(timeout);
                                 iframe.remove(); resolve({}); return;
                             }
 
                             if (isBranchRole) {
                                 let match = null;
-                                let checkEls = doc.querySelectorAll('table tr, .card, .widget, .dashboard-box, table');
-                                for(let el of checkEls) {
-                                    let m = el.textContent.match(/\d{1,2}\s+[a-zA-Z]{3},\s+\d{4}|\d{4}-\d{2}-\d{2}|\d{2}-\d{2}-\d{4}|\d{2}\/\d{2}\/\d{4}/g);
-                                    if (m && m.length > 0) { match = m; break; }
+                                let dateRegex = /\d{1,2}\s+[a-zA-Z]{3},\s+\d{4}|\d{4}-\d{2}-\d{2}|\d{2}-\d{2}-\d{4}|\d{2}\/\d{2}\/\d{4}/g;
+                                let inputs = doc.querySelectorAll('input[name*="date"], input[name*="txt"], input[type="text"], input[type="date"], input.datepicker, input');
+                                for(let inp of inputs) {
+                                    if (inp && inp.value) {
+                                        let m = inp.value.match(dateRegex);
+                                        if (m && m.length > 0) { match = m; break; }
+                                    }
+                                }
+                                if (!match) {
+                                    let checkEls = doc.querySelectorAll('table tr, .card, .widget, .dashboard-box, table');
+                                    for(let el of checkEls) {
+                                        let m = el.textContent.match(dateRegex);
+                                        if (m && m.length > 0) { match = m; break; }
+                                    }
                                 }
                                 if (!match && doc.body) {
-                                    match = doc.body.textContent.match(/\d{1,2}\s+[a-zA-Z]{3},\s+\d{4}|\d{4}-\d{2}-\d{2}|\d{2}-\d{2}-\d{4}|\d{2}\/\d{2}\/\d{4}/g);
+                                    match = doc.body.textContent.match(dateRegex);
                                 }
                                 if (match && match.length > 0) {
                                     clearInterval(poll); clearTimeout(timeout);
@@ -269,12 +551,12 @@
                                     }
                                 }
                             }
-                        }, 1000);
+                        }, 400);
 
                     } catch(e) {
                         clearTimeout(timeout); iframe.remove(); resolve({});
                     }
-                }, 3000);
+                }, 2500);
             };
         });
     }
@@ -319,11 +601,18 @@
                         let win = iframe.contentWindow;
 
                         let reportLvl = null, branchSel = null;
-                        for(let i=0; i<40; i++) {
+                        let formReadyCount = 0;
+                        for(let i=0; i<30; i++) {
                             reportLvl = doc.querySelector('select[name="cbo_report_level"]');
                             branchSel = doc.querySelector('select[name="cbo_branch"]');
                             if(reportLvl || branchSel) break;
-                            await new Promise(r => setTimeout(r, 500));
+
+                            let anyElement = doc.querySelector('select, button, input, label, table, .card, .panel, h1, h2, h3, h4');
+                            if (anyElement) {
+                                formReadyCount++;
+                                if (formReadyCount >= 2) break;
+                            }
+                            await new Promise(r => setTimeout(r, 300));
                         }
 
                         let zones = [], areas = [], branches = [];
@@ -335,7 +624,7 @@
                             let hasBranch = Array.from(reportLvl.options).some(o => o.value === '1');
 
                             if (hasZone) {
-                                localStorage.setItem('mf_user_type', 'HO');
+                                sessionStorage.setItem('mf_user_type', 'HO');
                                 if(statusCallback) statusCallback("জোন সিঙ্ক হচ্ছে...");
                                 triggerVueChange(reportLvl, '3', win);
                                 await new Promise(r => setTimeout(r, 800));
@@ -357,7 +646,7 @@
                             }
 
                             if (hasArea) {
-                                if (!hasZone) localStorage.setItem('mf_user_type', 'AREA');
+                                if (!hasZone) sessionStorage.setItem('mf_user_type', 'AREA');
                                 if(statusCallback) statusCallback("অঞ্চল সিঙ্ক হচ্ছে...");
                                 triggerVueChange(reportLvl, '2', win);
                                 await new Promise(r => setTimeout(r, 800));
@@ -381,7 +670,7 @@
                             }
 
                             if (hasBranch) {
-                                if (!hasZone && !hasArea) localStorage.setItem('mf_user_type', 'BRANCH');
+                                if (!hasZone && !hasArea) sessionStorage.setItem('mf_user_type', 'BRANCH');
                                 if(statusCallback) statusCallback("শাখা সিঙ্ক হচ্ছে...");
                                 triggerVueChange(reportLvl, '1', win);
                                 await new Promise(r => setTimeout(r, 800));
@@ -401,7 +690,7 @@
                             }
                         }
                         else if (branchSel) {
-                            localStorage.setItem('mf_user_type', 'AREA');
+                            sessionStorage.setItem('mf_user_type', 'AREA');
                             if(statusCallback) statusCallback("শাখা সিঙ্ক হচ্ছে...");
                             let bSel = await waitForOptions(doc, 'select[name="cbo_branch"]', 0);
                             if (bSel) {
@@ -416,18 +705,18 @@
                             }
                         }
                         else {
-                            localStorage.setItem('mf_user_type', 'BRANCH');
+                            sessionStorage.setItem('mf_user_type', 'BRANCH');
                             if(statusCallback) statusCallback("সিস্টেম প্রস্তুত!");
                             branches.push({id: 'SELF', name: 'My Branch', area: 'N/A', zone: 'N/A'});
                         }
 
-                        localStorage.setItem('mf_cached_zones', JSON.stringify(zones));
-                        localStorage.setItem('mf_cached_areas', JSON.stringify(areas));
-                        localStorage.setItem('mf_cached_branches', JSON.stringify(branches));
+                        sessionStorage.setItem('mf_cached_zones', JSON.stringify(zones));
+                        sessionStorage.setItem('mf_cached_areas', JSON.stringify(areas));
+                        sessionStorage.setItem('mf_cached_branches', JSON.stringify(branches));
                         
                         clearTimeout(timeout); iframe.remove(); resolve(true);
                     } catch(e) { clearTimeout(timeout); iframe.remove(); resolve(false); }
-                }, 2000);
+                }, 300);
             };
         });
     }
@@ -461,14 +750,36 @@
         });
     }
 
+    let isBdeBtnClosed = false;
     function initFloatingButton() {
-        if (document.getElementById('bde-ghost-date-toggle')) return;
-        let btn = document.createElement('button');
-        btn.id = 'bde-ghost-date-toggle';
-        btn.innerHTML = '📅 Branch Dates';
-        btn.style.cssText = 'position:fixed; bottom:110px; right:16px; background:#2980b9; color:white; border:none; padding:10px 15px; border-radius:50px; font-weight:bold; font-size:13px; box-shadow:0 4px 14px rgba(0,0,0,0.4); cursor:pointer; z-index:999999; transition:0.3s;';
-        btn.onclick = openMainPanel;
-        document.body.appendChild(btn);
+        if (isBdeBtnClosed || document.getElementById('bde-ghost-date-toggle')) return;
+        
+        let container = document.createElement('div');
+        container.id = 'bde-ghost-date-toggle';
+        container.style.cssText = 'position:fixed; bottom:110px; right:16px; display:flex; align-items:center; background:#2980b9; color:white; border-radius:50px; padding:8px 14px; font-weight:bold; font-size:13px; box-shadow:0 4px 14px rgba(0,0,0,0.4); z-index:999998; font-family:Arial; transition:all 0.3s ease; cursor:pointer;';
+        
+        let textSpan = document.createElement('span');
+        textSpan.innerText = '📅 Branch Dates';
+        textSpan.style.cssText = 'margin-right:8px; pointer-events:none;';
+
+        let closeBtn = document.createElement('button');
+        closeBtn.innerText = '✕';
+        closeBtn.title = 'বন্ধ করুন';
+        closeBtn.style.cssText = 'background: rgba(255,255,255,0.25); color:white; border:none; width:20px; height:20px; border-radius:50%; font-size:11px; font-weight:bold; cursor:pointer; display:flex; align-items:center; justify-content:center; padding:0; outline:none; transition:0.2s;';
+        closeBtn.onmouseover = () => closeBtn.style.background = 'rgba(255,0,0,0.8)';
+        closeBtn.onmouseout = () => closeBtn.style.background = 'rgba(255,255,255,0.25)';
+        closeBtn.onclick = (e) => {
+            e.stopPropagation();
+            isBdeBtnClosed = true;
+            container.remove();
+            let p = document.getElementById('bde-ghost-date-panel');
+            if(p) p.remove();
+        };
+
+        container.onclick = () => openMainPanel();
+        container.appendChild(textSpan);
+        container.appendChild(closeBtn);
+        document.body.appendChild(container);
     }
 
     function openMainPanel() {
@@ -482,7 +793,7 @@
 
         panel.innerHTML = `
             <div id="bde-drag-header" style="background:#2c3e50; color:white; padding:7px 12px; display:flex; justify-content:space-between; align-items:center; cursor:move; flex-shrink:0;">
-                <strong style="font-size:13px;">📅 Branch Date Extractor v3.1</strong>
+                <strong style="font-size:13px;">📅 Branch Date Extractor</strong>
                 <button id="bde-close-date-panel" title="বন্ধ করুন" style="background: linear-gradient(135deg, #ff416c, #ff4b2b); color: white; border: none; width: 26px; height: 26px; border-radius: 50%; font-size: 14px; font-weight: bold; cursor: pointer; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 6px rgba(255, 65, 108, 0.45); transition: all 0.2s ease; outline: none; padding: 0;" onmouseover="this.style.transform='scale(1.15)'; this.style.boxShadow='0 3px 10px rgba(255, 65, 108, 0.7)';" onmouseout="this.style.transform='scale(1)'; this.style.boxShadow='0 2px 6px rgba(255, 65, 108, 0.45)';" onmousedown="this.style.transform='scale(0.95)';">✕</button>
             </div>
 
@@ -683,7 +994,7 @@
             }
         };
 
-        if (localStorage.getItem('mf_cached_branches')) {
+        if (sessionStorage.getItem('mf_cached_branches')) {
             updateUIForRole();
         } else {
             document.getElementById('bde-status-msg').innerHTML = "<span style='color:#2980b9;'>⏳ স্ক্যান চলছে, একটু অপেক্ষা করুন...</span>";
@@ -691,8 +1002,8 @@
     }
 
     function updateUIForRole() {
-        let zones = JSON.parse(localStorage.getItem('mf_cached_zones') || '[]');
-        let areas = JSON.parse(localStorage.getItem('mf_cached_areas') || '[]');
+        let zones = JSON.parse(sessionStorage.getItem('mf_cached_zones') || '[]');
+        let areas = JSON.parse(sessionStorage.getItem('mf_cached_areas') || '[]');
         let levelDropdown = document.getElementById('bde-ui-level');
 
         levelDropdown.innerHTML = '';
@@ -709,9 +1020,9 @@
         targetSel.innerHTML = '<option value="ALL" data-name="ALL">🚀 Select All Branches</option>';
 
         let data = [];
-        if (level === '3') data = JSON.parse(localStorage.getItem('mf_cached_zones') || '[]');
-        else if (level === '2') data = JSON.parse(localStorage.getItem('mf_cached_areas') || '[]');
-        else if (level === '1') data = JSON.parse(localStorage.getItem('mf_cached_branches') || '[]');
+        if (level === '3') data = JSON.parse(sessionStorage.getItem('mf_cached_zones') || '[]');
+        else if (level === '2') data = JSON.parse(sessionStorage.getItem('mf_cached_areas') || '[]');
+        else if (level === '1') data = JSON.parse(sessionStorage.getItem('mf_cached_branches') || '[]');
 
         data.forEach(item => {
             targetSel.innerHTML += `<option value="${item.id}" data-name="${item.name}">${item.name}</option>`;
@@ -724,7 +1035,7 @@
         let targetId = targetSel.value;
         let targetName = targetSel.options[targetSel.selectedIndex].getAttribute('data-name');
 
-        let allBranches = JSON.parse(localStorage.getItem('mf_cached_branches') || '[]');
+        let allBranches = JSON.parse(sessionStorage.getItem('mf_cached_branches') || '[]');
         let branchesToProcess = [];
 
         if (targetId === 'ALL') {
@@ -868,7 +1179,8 @@
                 performRoleWiseSync();
             }
         } else {
-            hasSyncedThisPageLoad = false; 
+            hasSyncedThisPageLoad = false;
+            isBdeBtnClosed = false;
             if (btn) btn.remove();
             if (panel) panel.remove();
         }
@@ -877,7 +1189,7 @@
 })();
 
 // ========================================================================
-// EXTENSION 2: 🚀 Auditor Pro IT-Rameez (Full Screen & Zero Digit Clip)
+// EXTENSION 2: 🚀 MIS & AIS Checker-DSK_IT (Full Screen & Zero Digit Clip)
 // ========================================================================
 (function() {
     'use strict';
@@ -950,146 +1262,22 @@
     }
 
     async function waitForOptions(doc, selector, minLen = 1) {
-        for(let i=0; i<40; i++) {
+        for(let i=0; i<80; i++) {
             let el = doc.querySelector(selector);
             if (el && el.options.length > minLen) return el;
-            await new Promise(r => setTimeout(r, 500));
+            await new Promise(r => setTimeout(r, 100));
         }
         return doc.querySelector(selector);
     }
 
     function syncLocations(statusCallback) {
         return new Promise((resolve) => {
-            let iframe = document.createElement('iframe');
-            iframe.style.cssText = 'position:fixed; top:0; left:-9999px; width:1200px; height:800px; border:none; z-index:-1;';
-            iframe.src = window.location.origin + window.location.pathname + '#/reports/po-mis-reports/po-mis-1-index';
-            document.body.appendChild(iframe);
-
-            let timeout = setTimeout(() => { iframe.remove(); resolve(false); }, 60000); 
-
-            iframe.onload = () => {
-                statusCallback("সিস্টেম স্ক্যান করা হচ্ছে...");
-                
-                setTimeout(async () => {
-                    try {
-                        let doc = iframe.contentDocument || iframe.contentWindow.document;
-                        let win = iframe.contentWindow;
-                        
-                        let reportLvl = null, branchSel = null;
-                        
-                        for (let i = 0; i < 40; i++) {
-                            reportLvl = doc.querySelector('select[name="cbo_report_level"]');
-                            branchSel = doc.querySelector('select[name="cbo_branch"]');
-                            if (reportLvl || branchSel) break;
-                            await new Promise(r => setTimeout(r, 500));
-                        }
-
-                        if (reportLvl) {
-                            localStorage.setItem('mf_user_type', 'HO');
-                            statusCallback("জোন সিঙ্ক হচ্ছে...");
-                            
-                            let zones = [], areas = [], branches = [];
-                            let zMap = {}, aMap = {};
-
-                            let hasZone = Array.from(reportLvl.options).some(o => o.value === '3');
-                            if (hasZone) {
-                                triggerVueChange(reportLvl, '3', win);
-                                await new Promise(r => setTimeout(r, 800));
-                                let zoneSel = await waitForOptions(doc, 'select[name="cbo_zone"]');
-                                if (zoneSel) {
-                                    let currentZone = "Unknown Zone";
-                                    Array.from(zoneSel.options).forEach(opt => {
-                                        if (opt.value && opt.value !== '-1' && !opt.text.includes('--')) {
-                                            if (!opt.disabled && !opt.value.includes('@@@')) {
-                                                currentZone = opt.text.trim();
-                                                zones.push({id: opt.value, name: currentZone});
-                                            } else if (opt.disabled && opt.value.includes('@@@')) {
-                                                let areaName = opt.text.replace(/\u00A0/g, '').replace(/@@@/g, '').trim();
-                                                if(areaName) zMap[areaName] = currentZone;
-                                            }
-                                        }
-                                    });
-                                }
-                            }
-
-                            statusCallback("অঞ্চল সিঙ্ক হচ্ছে...");
-                            let hasArea = Array.from(reportLvl.options).some(o => o.value === '2');
-                            if (hasArea) {
-                                triggerVueChange(reportLvl, '2', win);
-                                await new Promise(r => setTimeout(r, 800));
-                                let areaSel = await waitForOptions(doc, 'select[name="cbo_area"]');
-                                if (areaSel) {
-                                    let currentArea = "Unknown Area";
-                                    Array.from(areaSel.options).forEach(opt => {
-                                        if (opt.value && opt.value !== '-1' && !opt.text.includes('--')) {
-                                            if (!opt.disabled && !opt.value.includes('@@@')) {
-                                                currentArea = opt.text.trim();
-                                                let parentZone = zMap[currentArea] || "Unknown Zone";
-                                                areas.push({id: opt.value, name: currentArea, zone: parentZone});
-                                            } else if (opt.disabled && opt.value.includes('@@@')) {
-                                                let branchId = opt.value.split('##')[1] || opt.value.replace(/[^0-9]/g, '');
-                                                let branchNameClean = opt.text.replace(/\u00A0/g, '').replace(/@@@/g, '').trim();
-                                                if(branchId) aMap[branchId] = currentArea;
-                                                if(branchNameClean) aMap[branchNameClean] = currentArea;
-                                            }
-                                        }
-                                    });
-                                }
-                            }
-
-                            statusCallback("শাখা সিঙ্ক হচ্ছে...");
-                            let hasBranch = Array.from(reportLvl.options).some(o => o.value === '1');
-                            if (hasBranch) {
-                                triggerVueChange(reportLvl, '1', win);
-                                await new Promise(r => setTimeout(r, 800));
-                                let bSel = await waitForOptions(doc, 'select[name="cbo_branch"]');
-                                if (bSel) {
-                                    Array.from(bSel.options).forEach(opt => {
-                                        if (opt.value && opt.value !== '-1' && !opt.text.includes('--')) {
-                                            let bName = opt.text.trim();
-                                            if (!opt.disabled && !opt.value.includes('@@@') && !/\b(area|zone)\b/i.test(bName)) {
-                                                let bId = opt.value;
-                                                let bArea = aMap[bId] || aMap[bName] || "Unknown Area";
-                                                let bZone = zMap[bArea] || "Unknown Zone";
-                                                branches.push({id: bId, name: bName, area: bArea, zone: bZone});
-                                            }
-                                        }
-                                    });
-                                }
-                            }
-
-                            localStorage.setItem('mf_cached_zones', JSON.stringify(zones));
-                            localStorage.setItem('mf_cached_areas', JSON.stringify(areas));
-                            localStorage.setItem('mf_cached_branches', JSON.stringify(branches));
-                        } 
-                        else if (branchSel) {
-                            localStorage.setItem('mf_user_type', 'AREA');
-                            statusCallback("শাখা সিঙ্ক হচ্ছে...");
-                            
-                            let branches = [];
-                            let bSel = await waitForOptions(doc, 'select[name="cbo_branch"]', 0);
-                            if (bSel) {
-                                Array.from(bSel.options).forEach(opt => {
-                                    if (opt.value && opt.value !== '-1' && opt.value !== '' && !opt.text.includes('--')) {
-                                        let bName = opt.text.trim();
-                                        if (!opt.disabled && !opt.value.includes('@@@') && !/\b(area|zone)\b/i.test(bName)) {
-                                            branches.push({id: opt.value, name: bName, area: 'N/A', zone: 'N/A'});
-                                        }
-                                    }
-                                });
-                            }
-                            localStorage.setItem('mf_cached_branches', JSON.stringify(branches));
-                        } 
-                        else {
-                            localStorage.setItem('mf_user_type', 'BRANCH');
-                            statusCallback("সিস্টেম প্রস্তুত!");
-                            localStorage.setItem('mf_cached_branches', JSON.stringify([{id: 'SELF', name: 'My Branch'}]));
-                        }
-                        
-                        clearTimeout(timeout); iframe.remove(); resolve(true);
-                    } catch(e) { clearTimeout(timeout); iframe.remove(); resolve(false); }
-                }, 2000);
-            };
+            if (statusCallback) statusCallback("সেন্ট্রাল সিঙ্ক হচ্ছে...");
+            if (window.runGlobalHierarchySync) {
+                window.runGlobalHierarchySync(true, (success) => resolve(success));
+            } else {
+                resolve(false);
+            }
         });
     }
 
@@ -1106,7 +1294,7 @@
             }, 60000); 
 
             let isProcessed = false;
-            let uType = localStorage.getItem('mf_user_type') || 'HO';
+            let uType = sessionStorage.getItem('mf_user_type') || 'HO';
 
             iframe.onload = () => {
                 if(isProcessed) return;
@@ -1121,20 +1309,20 @@
                             let reportLvlDropdown = doc.querySelector('select[name="cbo_report_level"]');
                             if (reportLvlDropdown) {
                                 triggerVueChange(reportLvlDropdown, reportLevel, win);
-                                await new Promise(r => setTimeout(r, 1000)); 
+                                await new Promise(r => setTimeout(r, 800)); 
                             }
                             let targetSelector = reportLevel === '3' ? 'select[name="cbo_zone"]' : (reportLevel === '2' ? 'select[name="cbo_area"]' : 'select[name="cbo_branch"]');
                             let targetSel = await waitForOptions(doc, targetSelector);
                             if (targetSel && targetId !== 'ALL') {
                                 triggerVueChange(targetSel, targetId, win);
-                                await new Promise(r => setTimeout(r, 1000)); 
+                                await new Promise(r => setTimeout(r, 800)); 
                             }
                         } 
                         else if (uType === 'AREA') {
                             let targetSel = await waitForOptions(doc, 'select[name="cbo_branch"]');
                             if (targetSel && targetId !== 'ALL') {
                                 triggerVueChange(targetSel, targetId, win);
-                                await new Promise(r => setTimeout(r, 1000)); 
+                                await new Promise(r => setTimeout(r, 800)); 
                             }
                         }
 
@@ -1144,12 +1332,8 @@
                                 triggerVueChange(samitySel, "-1", win); 
                                 await new Promise(r => setTimeout(r, 500));
                             }
-                        }
-
-                        triggerVueChange(doc.querySelector('select[name="cbo_service_charge"]'), "1", win);
-                        triggerVueChange(doc.querySelector('select[name="cbo_funding_organization"]'), "-1", win);
-
-                        if(type === 'mis') {
+                            triggerVueChange(doc.querySelector('select[name="cbo_service_charge"]'), "1", win);
+                            triggerVueChange(doc.querySelector('select[name="cbo_funding_organization"]'), "-1", win);
                             triggerVueChange(doc.querySelector('input[name="txt_date"]'), targetDate, win);
                             
                             setTimeout(() => {
@@ -1162,8 +1346,8 @@
                                         let data = parseMis(doc);
                                         iframe.remove(); resolve(data);
                                     }
-                                }, 1000);
-                            }, 1500);
+                                }, 400);
+                            }, 1000);
                         } 
                         else if (type === 'ais') {
                             let dateInputAis = doc.querySelector('input[name="txt_as_on_date"]');
@@ -1189,35 +1373,66 @@
                                         let data = parseAis(doc);
                                         iframe.remove(); resolve(data);
                                     }
-                                }, 1000);
-                            }, 1500);
+                                }, 400);
+                            }, 1000);
                         }
                     } catch(e) { clearTimeout(timeout); iframe.remove(); resolve(null); }
-                }, 3000);
+                }, 2000);
             };
         });
     }
 
-    function initDashboard() {
+    let isMisAisBtnClosed = false;
+    function initMisAisToggleBtn() {
         if (!window.location.hash.includes('dashboard')) return;
+        if (isMisAisBtnClosed || document.getElementById('mis-ais-toggle-btn')) return;
+        
+        let container = document.createElement('div');
+        container.id = 'mis-ais-toggle-btn';
+        container.style.cssText = 'position:fixed; bottom:210px; right:16px; display:flex; align-items:center; background:#2c3e50; color:white; border-radius:50px; padding:8px 14px; font-weight:bold; font-size:13px; box-shadow:0 4px 14px rgba(0,0,0,0.4); z-index:999998; font-family:Arial; transition:all 0.3s ease; cursor:pointer;';
+        
+        let textSpan = document.createElement('span');
+        textSpan.innerText = '🚀 MIS & AIS Checker-DSK_IT';
+        textSpan.style.cssText = 'margin-right:8px; pointer-events:none;';
+
+        let closeBtn = document.createElement('button');
+        closeBtn.innerText = '✕';
+        closeBtn.title = 'বন্ধ করুন';
+        closeBtn.style.cssText = 'background: rgba(255,255,255,0.25); color:white; border:none; width:20px; height:20px; border-radius:50%; font-size:11px; font-weight:bold; cursor:pointer; display:flex; align-items:center; justify-content:center; padding:0; outline:none; transition:0.2s;';
+        closeBtn.onmouseover = () => closeBtn.style.background = 'rgba(255,0,0,0.8)';
+        closeBtn.onmouseout = () => closeBtn.style.background = 'rgba(255,255,255,0.25)';
+        closeBtn.onclick = (e) => {
+            e.stopPropagation();
+            isMisAisBtnClosed = true;
+            container.remove();
+            let p = document.getElementById('ghost-audit-panel');
+            if(p) p.remove();
+        };
+
+        container.onclick = () => openMisAisPanel();
+        container.appendChild(textSpan);
+        container.appendChild(closeBtn);
+        document.body.appendChild(container);
+    }
+
+    function openMisAisPanel() {
         if (document.getElementById('ghost-audit-panel')) return;
 
         const panel = document.createElement('div');
         panel.id = 'ghost-audit-panel';
-        panel.style.cssText = 'position: fixed; top: 10px; left: 50%; transform: translateX(-50%); background: #fff; border: 2px solid #2c3e50; border-radius: 6px; box-shadow: 0 8px 20px rgba(0,0,0,0.45); width: 180px; font-family: Arial; z-index: 999998; overflow: hidden; transition: width 0.2s ease, max-width 0.2s ease;';
+        panel.style.cssText = 'position: fixed; top: 5px; left: 50%; transform: translateX(-50%); background: #fff; border: 2px solid #2c3e50; border-radius: 8px; box-shadow: 0 10px 30px rgba(0,0,0,0.45); width: 98vw; max-width: 750px; font-family: Arial; z-index: 999999; overflow: hidden;';
         document.body.appendChild(panel);
 
         panel.innerHTML = `
-            <div id="ghost-header" style="background:#2c3e50; color:white; padding:8px 10px; cursor:move; display:flex; justify-content:space-between; align-items:center;">
-                <strong id="panel-title" style="font-size:12px; pointer-events:none; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">🚀 Auditor Pro</strong>
-                <div style="display:flex; align-items:center; gap:6px;">
-                    <button id="sync-locations-btn" style="display:none; background:#f39c12; border:none; color:white; font-size:10px; cursor:pointer; padding:2px 5px; border-radius:2px; font-weight:bold;">🔄 Sync</button>
-                    <button id="ghost-min" title="ছোট/বড় করুন" style="background: #34495e; border:none; color:white; width: 22px; height: 22px; border-radius: 4px; font-size:13px; cursor:pointer; font-weight:bold; display:flex; align-items:center; justify-content:center; transition: all 0.2s;">➕</button>
-                    <button id="ghost-close" title="বন্ধ করুন" style="background: linear-gradient(135deg, #ff416c, #ff4b2b); color: white; border: none; width: 22px; height: 22px; border-radius: 50%; font-size: 12px; font-weight: bold; cursor: pointer; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 5px rgba(255, 65, 108, 0.45); transition: all 0.2s ease; outline: none; padding: 0;" onmouseover="this.style.transform='scale(1.15)'; this.style.boxShadow='0 3px 8px rgba(255, 65, 108, 0.7)';" onmouseout="this.style.transform='scale(1)'; this.style.boxShadow='0 2px 5px rgba(255, 65, 108, 0.45)';" onmousedown="this.style.transform='scale(0.95)';">✕</button>
+            <div id="ghost-header" style="background:#2c3e50; color:white; padding:8px 12px; cursor:move; display:flex; justify-content:space-between; align-items:center;">
+                <strong id="panel-title" style="font-size:13px; pointer-events:none; white-space:nowrap;">🚀 MIS & AIS Checker-DSK_IT</strong>
+                <div style="display:flex; align-items:center; gap:8px;">
+                    <button id="sync-locations-btn" style="background:#f39c12; border:none; color:white; font-size:11px; cursor:pointer; padding:3px 8px; border-radius:3px; font-weight:bold;">🔄 Sync</button>
+                    <button id="ghost-close" title="বন্ধ করুন" style="background: linear-gradient(135deg, #ff416c, #ff4b2b); color: white; border: none; width: 26px; height: 26px; border-radius: 50%; font-size: 14px; font-weight: bold; cursor: pointer; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 6px rgba(255, 65, 108, 0.45); transition: all 0.2s ease;">✕</button>
                 </div>
             </div>
             
-            <div id="ghost-body" style="padding:6px; overflow-y:auto; max-height: 88vh; display: none;">
+            <div id="ghost-body" style="padding:6px; overflow-y:auto; max-height: 88vh; display: block;">
                 <div style="display:flex; gap:4px; margin-bottom:4px; align-items:flex-end;" id="controls-container">
                 </div>
                 <button id="start-audit-btn" style="width:100%; background:#27ae60; color:white; border:none; padding:6px; font-weight:bold; font-size:13px; border-radius:3px; cursor:pointer; transition:0.2s;">🚀 Start Audit Process</button>
@@ -1227,47 +1442,10 @@
             </div>
         `;
 
-        let isExpanded = false;
-        
-        function togglePanel(forceExpand = null) {
-            let body = document.getElementById('ghost-body');
-            let syncBtn = document.getElementById('sync-locations-btn');
-            let minBtn = document.getElementById('ghost-min');
-            let title = document.getElementById('panel-title');
-            
-            if (forceExpand !== null) isExpanded = !forceExpand;
-            
-            if (!isExpanded) {
-                panel.style.width = '98vw';
-                panel.style.maxWidth = '750px';
-                panel.style.top = '5px';
-                body.style.display = 'block';
-                syncBtn.style.display = 'inline-block';
-                minBtn.innerText = '−';
-                title.innerText = "🚀 Auditor Pro IT-Rameez";
-                isExpanded = true;
-            } else {
-                panel.style.width = '180px';
-                panel.style.maxWidth = '180px';
-                panel.style.top = '10px';
-                body.style.display = 'none';
-                syncBtn.style.display = 'none';
-                minBtn.innerText = '➕';
-                
-                let uType = localStorage.getItem('mf_user_type');
-                if(uType === 'BRANCH') title.innerText = "🚀 Branch Pro";
-                else if(uType === 'AREA') title.innerText = "🚀 Area Pro";
-                else title.innerText = "🚀 Auditor Pro";
-                
-                isExpanded = false;
-            }
-        }
-
-        document.getElementById('ghost-min').onclick = () => togglePanel();
         document.getElementById('ghost-close').onclick = () => panel.remove();
 
         function renderUI() {
-            let uType = localStorage.getItem('mf_user_type');
+            let uType = sessionStorage.getItem('mf_user_type');
             let container = document.getElementById('controls-container');
             let dateHtml = `
                 <div style="flex:1;">
@@ -1276,12 +1454,12 @@
                 </div>
             `;
 
+            document.getElementById('panel-title').innerText = "🚀 MIS & AIS Checker-DSK_IT";
+
             if (uType === 'BRANCH') {
-                document.getElementById('panel-title').innerText = isExpanded ? "🚀 Branch Auditor Pro" : "🚀 Branch Pro";
                 container.innerHTML = dateHtml; 
             } 
             else if (uType === 'AREA') {
-                document.getElementById('panel-title').innerText = isExpanded ? "🚀 Area Auditor Pro" : "🚀 Area Pro";
                 container.innerHTML = `
                     <div style="flex:1.5;">
                         <label style="font-size:10px; font-weight:bold; color:#34495e;">🏢 নির্বাচন:</label>
@@ -1294,8 +1472,8 @@
                 populateTargets();
             } 
             else { 
-                let zones = JSON.parse(localStorage.getItem('mf_cached_zones') || '[]');
-                let areas = JSON.parse(localStorage.getItem('mf_cached_areas') || '[]');
+                let zones = JSON.parse(sessionStorage.getItem('mf_cached_zones') || '[]');
+                let areas = JSON.parse(sessionStorage.getItem('mf_cached_areas') || '[]');
                 
                 let levelOptions = `<option value="1">শাখা</option>`;
                 if (areas.length > 0) levelOptions += `<option value="2">অঞ্চল</option>`;
@@ -1303,7 +1481,6 @@
                 else if (areas.length > 0) levelOptions = levelOptions.replace('value="2"', 'value="2" selected');
                 else levelOptions = levelOptions.replace('value="1"', 'value="1" selected');
 
-                document.getElementById('panel-title').innerText = "🚀 Auditor Pro IT-Rameez";
                 container.innerHTML = `
                     <div style="flex:0.8;">
                         <label style="font-size:10px; font-weight:bold; color:#34495e;">📍 লেভেল:</label>
@@ -1327,7 +1504,7 @@
             let targetSel = document.getElementById('custom-target');
             if(!targetSel) return;
             
-            let uType = localStorage.getItem('mf_user_type');
+            let uType = sessionStorage.getItem('mf_user_type');
             let data = [];
 
             if (uType === 'BRANCH') return;
@@ -1337,11 +1514,11 @@
             targetSel.innerHTML = '<option value="ALL" selected>🚀 Select All</option>';
             
             if (uType === 'AREA') {
-                data = JSON.parse(localStorage.getItem('mf_cached_branches') || '[]');
+                data = JSON.parse(sessionStorage.getItem('mf_cached_branches') || localStorage.getItem('microfin_branch_list') || '[]');
             } else {
-                if (level === '3') data = JSON.parse(localStorage.getItem('mf_cached_zones') || '[]');
-                else if (level === '2') data = JSON.parse(localStorage.getItem('mf_cached_areas') || '[]');
-                else if (level === '1') data = JSON.parse(localStorage.getItem('mf_cached_branches') || '[]');
+                if (level === '3') data = JSON.parse(sessionStorage.getItem('mf_cached_zones') || '[]');
+                else if (level === '2') data = JSON.parse(sessionStorage.getItem('mf_cached_areas') || '[]');
+                else if (level === '1') data = JSON.parse(sessionStorage.getItem('mf_cached_branches') || localStorage.getItem('microfin_branch_list') || '[]');
             }
             
             if(data.length > 0) {
@@ -1349,50 +1526,19 @@
             }
         }
 
-        if(!sessionStorage.getItem('mf_auto_synced') || !localStorage.getItem('mf_user_type')) {
-            sessionStorage.setItem('mf_auto_synced', 'true');
-            
-            document.getElementById('panel-title').innerText = "⏳ Syncing...";
-            document.getElementById('audit-status').innerHTML = `<span style="color:#f39c12;">⏳ অটো সিংক হচ্ছে...</span>`;
-            document.getElementById('start-audit-btn').disabled = true;
-
-            syncLocations((msg) => { 
-                let st = document.getElementById('audit-status');
-                if(st) st.innerText = msg;
-                let pt = document.getElementById('panel-title');
-                if(!isExpanded && pt) pt.innerText = "⏳ " + msg;
-            }).then((success) => {
-                renderUI();
-                let saBtn = document.getElementById('start-audit-btn');
-                if(saBtn) saBtn.disabled = false;
-                
-                let ast = document.getElementById('audit-status');
-                let pt = document.getElementById('panel-title');
-                
-                if(success) {
-                    if(ast) ast.innerText = "✅ অটো সিংক সম্পন্ন!";
-                    if(!isExpanded && pt) pt.innerText = "✅ সিংক সম্পন্ন!";
-                } else {
-                    if(ast) ast.innerHTML = "<span style='color:red;'>❌ সিংক ব্যর্থ!</span>";
-                    if(!isExpanded && pt) pt.innerText = "❌ সিংক ব্যর্থ!";
-                }
-                
-                setTimeout(() => {
-                    let pt2 = document.getElementById('panel-title');
-                    if(!isExpanded && pt2) {
-                        let uType = localStorage.getItem('mf_user_type');
-                        if(uType === 'BRANCH') pt2.innerText = "🚀 Branch Pro";
-                        else if(uType === 'AREA') pt2.innerText = "🚀 Area Pro";
-                        else pt2.innerText = "🚀 Auditor Pro";
-                    }
-                }, 2000);
-            });
-        } else {
+        renderUI();
+        window.addEventListener('mf_central_sync_completed', () => {
             renderUI();
+            populateTargets();
+        });
+
+        if (!sessionStorage.getItem('mf_auto_synced') || !sessionStorage.getItem('mf_user_type')) {
+            if (window.runGlobalHierarchySync) {
+                window.runGlobalHierarchySync(false, () => { renderUI(); populateTargets(); });
+            }
         }
 
         document.getElementById('sync-locations-btn').onclick = () => {
-            togglePanel(true);
             document.getElementById('audit-status').innerHTML = `<span style="color:#f39c12;">⏳ সিংক হচ্ছে...</span>`;
             document.getElementById('start-audit-btn').disabled = true;
             document.getElementById('export-excel-btn').style.display = 'none';
@@ -1457,7 +1603,7 @@
                 if (rowData.length > 0) csvContent += rowData.join(",") + "\r\n";
             });
             
-            let uType = localStorage.getItem('mf_user_type');
+            let uType = sessionStorage.getItem('mf_user_type');
             let targetName = "Branch";
             if(uType !== 'BRANCH') {
                 let targetSel = document.getElementById('custom-target');
@@ -1579,7 +1725,7 @@
 
         btn.onclick = async () => {
             let selectedDate = document.getElementById('custom-audit-date').value;
-            let uType = localStorage.getItem('mf_user_type');
+            let uType = sessionStorage.getItem('mf_user_type');
             
             let reportLevel = '1';
             let targetId = 'SELF';
@@ -1595,14 +1741,14 @@
                 
                 if (targetId === 'ALL') {
                     isBatchMode = true;
-                    if (reportLevel === '3') branchesToProcess = JSON.parse(localStorage.getItem('mf_cached_branches') || '[]');
-                    else if (reportLevel === '2') branchesToProcess = JSON.parse(localStorage.getItem('mf_cached_branches') || '[]');
-                    else if (reportLevel === '1') branchesToProcess = JSON.parse(localStorage.getItem('mf_cached_branches') || '[]');
+                    if (reportLevel === '3') branchesToProcess = JSON.parse(sessionStorage.getItem('mf_cached_branches') || '[]');
+                    else if (reportLevel === '2') branchesToProcess = JSON.parse(sessionStorage.getItem('mf_cached_branches') || '[]');
+                    else if (reportLevel === '1') branchesToProcess = JSON.parse(sessionStorage.getItem('mf_cached_branches') || '[]');
                 } else {
                     if (reportLevel === '1') isBatchMode = false;
                     else {
                         isBatchMode = true;
-                        let allBranches = JSON.parse(localStorage.getItem('mf_cached_branches') || '[]');
+                        let allBranches = JSON.parse(sessionStorage.getItem('mf_cached_branches') || '[]');
                         if (reportLevel === '3') branchesToProcess = allBranches.filter(b => b.zone === targetName || b.zone === targetId);
                         else if (reportLevel === '2') branchesToProcess = allBranches.filter(b => b.area === targetName || b.area === targetId);
                     }
@@ -1615,7 +1761,7 @@
 
                 if (targetId === 'ALL') {
                     isBatchMode = true;
-                    branchesToProcess = JSON.parse(localStorage.getItem('mf_cached_branches') || '[]');
+                    branchesToProcess = JSON.parse(sessionStorage.getItem('mf_cached_branches') || '[]');
                 } else {
                     isBatchMode = false;
                 }
@@ -1881,10 +2027,560 @@
 
     setInterval(() => {
         if (window.location.hash.includes('dashboard')) {
-            initDashboard();
-        } else if (document.getElementById('ghost-audit-panel')) {
-            document.getElementById('ghost-audit-panel').remove();
+            initMisAisToggleBtn();
+        } else {
+            isMisAisBtnClosed = false;
+            let btn = document.getElementById('mis-ais-toggle-btn');
+            if (btn) btn.remove();
+            let p = document.getElementById('ghost-audit-panel');
+            if (p) p.remove();
         }
     }, 1500);
+
+})();
+
+// ========================================================================
+// 📊 3. HIERARCHICAL BRANCH REPORT (DASHBOARD MEMBER VERIFICATION MODULE)
+// ========================================================================
+(function() {
+    'use strict';
+
+    // 🌟 Ultra-Safe Storage Utilities (Error Proof)
+    const storageUtil = {
+        set: function(key, value, callback) {
+            try {
+                if (typeof chrome !== 'undefined' && chrome.storage && chrome.storage.local) {
+                    let obj = {}; obj[key] = value;
+                    chrome.storage.local.set(obj, callback);
+                    return;
+                }
+            } catch(e) { console.warn("Chrome storage not permitted. Using fallback."); }
+            localStorage.setItem(key, JSON.stringify(value));
+            if(callback) callback();
+        },
+        get: function(key, callback) {
+            try {
+                if (typeof chrome !== 'undefined' && chrome.storage && chrome.storage.local) {
+                    chrome.storage.local.get([key], function(result) {
+                        if (chrome.runtime && chrome.runtime.lastError) {
+                            let data = localStorage.getItem(key);
+                            try { callback(data ? JSON.parse(data) : undefined); } catch(err) { callback(undefined); }
+                        } else {
+                            callback(result[key]);
+                        }
+                    });
+                    return;
+                }
+            } catch(e) { console.warn("Chrome storage not permitted. Using fallback."); }
+            try {
+                let data = localStorage.getItem(key);
+                callback(data ? JSON.parse(data) : undefined);
+            } catch(err) { callback(undefined); }
+        }
+    };
+
+    // ১. গ্লোবাল ভেরিয়েবল ও ইন্টারসেপ্টর
+    let clonedUrl = null;
+    let clonedHeaders = {};
+    let isCapturing = false;
+    let isSyncing = false; 
+    let isToggleClosed = false; 
+
+    const origOpen = XMLHttpRequest.prototype.open;
+    const origSetHeader = XMLHttpRequest.prototype.setRequestHeader;
+    const origSend = XMLHttpRequest.prototype.send;
+
+    XMLHttpRequest.prototype.open = function(method, url) { this._url = url; this._headers = {}; origOpen.apply(this, arguments); };
+    XMLHttpRequest.prototype.setRequestHeader = function(name, value) { this._headers[name] = value; origSetHeader.apply(this, arguments); };
+    XMLHttpRequest.prototype.send = function(body) {
+        if (this._url && (this._url.includes('cbo_branch') || this._url.includes('cbo_member_status') || (this._url.includes('members') && (this._url.includes('limit=') || this._url.includes('ajax') || this._url.includes('list'))))) {
+            clonedUrl = this._url; 
+            clonedHeaders = Object.assign({}, this._headers); 
+            isCapturing = false;
+            try {
+                sessionStorage.setItem('mf_cloned_url', clonedUrl);
+                sessionStorage.setItem('mf_cloned_headers', JSON.stringify(clonedHeaders));
+                localStorage.setItem('mf_cloned_url_backup', clonedUrl);
+                localStorage.setItem('mf_cloned_headers_backup', JSON.stringify(clonedHeaders));
+            } catch(e){}
+            document.dispatchEvent(new Event('ApiCaptured'));
+        }
+        origSend.apply(this, arguments);
+    };
+
+    function triggerVueChange(el, value, win) {
+        if (!el) return;
+        el.value = value;
+        el.dispatchEvent(new Event('input', { bubbles: true }));
+        el.dispatchEvent(new Event('change', { bubbles: true }));
+        if (win && win.jQuery) win.jQuery(el).trigger('change');
+    }
+
+    // ২. ডাটা ম্যানেজমেন্ট (Safe Parsing)
+    function getMappings() {
+        let aMap = {}, zMap = {};
+        try { aMap = JSON.parse(localStorage.getItem('microfin_aMap') || '{}'); } catch(e){}
+        try { zMap = JSON.parse(localStorage.getItem('microfin_zMap') || '{}'); } catch(e){}
+        return {
+            aMap: aMap,
+            zMap: zMap,
+            role: localStorage.getItem('microfin_role') || 'BRANCH'
+        };
+    }
+
+    // ৩. Role-Based Central Master Sync Delegation
+    function performZeroTouchSync(force = false) {
+        if (window.runGlobalHierarchySync) {
+            isSyncing = true;
+            window.runGlobalHierarchySync(force, () => {
+                isSyncing = false;
+                document.querySelectorAll('.blockUI, .modal-backdrop, .blockOverlay, .sweet-overlay').forEach(el => el.remove());
+            });
+        }
+    }
+
+    // ব্যাকগ্রাউন্ড থেকে API ও ব্রাঞ্চ লিস্ট নিশ্চিতকরণ
+    async function ensureApiAndBranchList(force = false) {
+        let savedUrl = sessionStorage.getItem('mf_cloned_url') || localStorage.getItem('mf_cloned_url_backup');
+        let savedBList = localStorage.getItem('microfin_branch_list');
+
+        if (force || !savedUrl || !savedBList || JSON.parse(savedBList || '[]').length === 0) {
+            let status = document.getElementById('status-text');
+            if (status) status.innerText = "Connecting to member servers via background tab...";
+            
+            await new Promise((resolve) => {
+                let ifr = document.createElement('iframe');
+                ifr.style.cssText = 'position:fixed; top:0px; left:-9999px; width:100px; height:100px;';
+                ifr.src = window.location.origin + window.location.pathname + '#/members/members/index';
+                document.body.appendChild(ifr);
+
+                let timer = setTimeout(() => { ifr.remove(); resolve(); }, 12000);
+
+                ifr.onload = () => {
+                    setTimeout(async () => {
+                        try {
+                            let win = ifr.contentWindow;
+                            let doc = win.document || ifr.contentDocument;
+
+                            // 🌟 Inject XHR & Fetch interceptors directly into iframe window so background capture works!
+                            try {
+                                const ifrOpen = win.XMLHttpRequest.prototype.open;
+                                const ifrSetHeader = win.XMLHttpRequest.prototype.setRequestHeader;
+                                const ifrSend = win.XMLHttpRequest.prototype.send;
+                                win.XMLHttpRequest.prototype.open = function(method, url) { this._url = url; this._headers = {}; ifrOpen.apply(this, arguments); };
+                                win.XMLHttpRequest.prototype.setRequestHeader = function(name, value) { this._headers[name] = value; ifrSetHeader.apply(this, arguments); };
+                                win.XMLHttpRequest.prototype.send = function(body) {
+                                    if (this._url && (this._url.includes('cbo_branch') || this._url.includes('cbo_member_status') || (this._url.includes('members') && (this._url.includes('limit=') || this._url.includes('ajax') || this._url.includes('list'))))) {
+                                        clonedUrl = this._url; 
+                                        clonedHeaders = Object.assign({}, this._headers); 
+                                        sessionStorage.setItem('mf_cloned_url', clonedUrl);
+                                        sessionStorage.setItem('mf_cloned_headers', JSON.stringify(clonedHeaders));
+                                        localStorage.setItem('mf_cloned_url_backup', clonedUrl);
+                                        localStorage.setItem('mf_cloned_headers_backup', JSON.stringify(clonedHeaders));
+                                    }
+                                    ifrSend.apply(this, arguments);
+                                };
+                                const ifrFetch = win.fetch;
+                                if (ifrFetch) {
+                                    win.fetch = function(url, options) {
+                                        let urlStr = (typeof url === 'string' ? url : (url && url.url ? url.url : '') || '');
+                                        if (urlStr && (urlStr.includes('cbo_branch') || urlStr.includes('cbo_member_status') || (urlStr.includes('members') && (urlStr.includes('limit=') || urlStr.includes('ajax') || urlStr.includes('list'))))) {
+                                            clonedUrl = urlStr;
+                                            if (options && options.headers) clonedHeaders = Object.assign({}, options.headers);
+                                            sessionStorage.setItem('mf_cloned_url', clonedUrl);
+                                            sessionStorage.setItem('mf_cloned_headers', JSON.stringify(clonedHeaders));
+                                            localStorage.setItem('mf_cloned_url_backup', clonedUrl);
+                                            localStorage.setItem('mf_cloned_headers_backup', JSON.stringify(clonedHeaders));
+                                        }
+                                        return ifrFetch.apply(this, arguments);
+                                    };
+                                }
+                            } catch(hkErr) { console.error("Iframe hook error:", hkErr); }
+
+                            let waitLimit = 25;
+                            while(!doc.querySelector('#custom-search-btn') && waitLimit > 0) {
+                                await new Promise(r => setTimeout(r, 500));
+                                waitLimit--;
+                            }
+
+                            let cbo = doc.querySelector('select[name="cbo_branch"]');
+                            let bList = [];
+                            if (cbo && cbo.options.length > 1) {
+                                bList = Array.from(cbo.options)
+                                    .filter(o => o.value !== '' && o.value !== '1' && o.value !== '-1')
+                                    .filter(o => !/area\b/i.test(o.text) && !/zone\b/i.test(o.text))
+                                    .map(o => ({ id: o.value, name: o.text.trim() }));
+                            } else {
+                                let branchName = "My Branch";
+                                let bInfo = doc.querySelector('.branch_info') || document.querySelector('.branch_info');
+                                if(bInfo) {
+                                    let match = bInfo.innerText.match(/Branch:\s*(.*)/i);
+                                    if(match && match[1]) branchName = match[1].split('\n')[0].trim();
+                                }
+                                let bId = doc.querySelector('input[name="cbo_branch"]')?.value || (cbo ? cbo.value : '') || '';
+                                if (bId === 'SELF' || bId === '-1' || bId === '0') bId = '';
+                                bList = [{ id: bId, name: branchName, area: 'Branch', zone: 'Branch' }];
+                            }
+                            if (bList.length > 0) {
+                                localStorage.setItem('microfin_branch_list', JSON.stringify(bList));
+                            }
+
+                            let sBtn = doc.querySelector('#custom-search-btn');
+                            if (sBtn) {
+                                if(cbo) cbo.dispatchEvent(new Event('change', { bubbles: true }));
+                                sBtn.click();
+                                let checks = 0;
+                                while (!sessionStorage.getItem('mf_cloned_url') && !localStorage.getItem('mf_cloned_url_backup') && checks < 20) {
+                                    await new Promise(r => setTimeout(r, 150));
+                                    checks++;
+                                }
+                                await new Promise(r => setTimeout(r, 500));
+                            }
+                        } catch(e) { console.error("Iframe sync error:", e); }
+                        clearTimeout(timer);
+                        ifr.remove();
+                        resolve();
+                    }, 1500);
+                };
+            });
+        }
+    }
+
+    // ৪. API ডেটা ফেচার (Strict & Proven Logic)
+    async function fetchMemberCount(branchId, nidStatus) {
+        if (!clonedUrl) {
+            clonedUrl = sessionStorage.getItem('mf_cloned_url') || localStorage.getItem('mf_cloned_url_backup');
+            try { 
+                let savedHd = sessionStorage.getItem('mf_cloned_headers') || localStorage.getItem('mf_cloned_headers_backup');
+                if(savedHd) clonedHeaders = JSON.parse(savedHd); 
+            } catch(e){}
+        }
+        if(!clonedUrl) return 0;
+
+        let urlObj = new URL(clonedUrl.startsWith('http') ? clonedUrl : window.location.origin + clonedUrl);
+        urlObj.searchParams.set('limit', '1');
+        if (branchId && branchId !== '' && branchId !== 'SELF' && branchId !== '0' && branchId !== '-1') {
+            urlObj.searchParams.set('cbo_branch', branchId);
+        } else if (!urlObj.searchParams.has('cbo_branch')) {
+            urlObj.searchParams.set('cbo_branch', '');
+        }
+        urlObj.searchParams.set('cbo_nid_status', nidStatus);
+        urlObj.searchParams.set('cbo_member_status', 'A'); 
+        try {
+            const response = await fetch(urlObj.toString(), { headers: clonedHeaders });
+            const data = await response.json();
+            return data.total_rows || 0;
+        } catch (e) { return 0; }
+    }
+
+    // ড্যাশবোর্ডে ভাসমান বাটন
+    function injectToggleBtn() {
+        if (document.getElementById('member-report-toggle-btn')) return;
+        
+        let container = document.createElement('div');
+        container.id = 'member-report-toggle-btn';
+        container.style.cssText = 'position:fixed; bottom:160px; right:16px; display:flex; align-items:center; background:#8e44ad; color:white; border-radius:50px; padding:8px 14px; font-weight:bold; font-size:13px; box-shadow:0 4px 14px rgba(0,0,0,0.4); z-index:999998; font-family:Arial; transition:0.3s;';
+        
+        let textSpan = document.createElement('span');
+        textSpan.innerText = '👥 Member Verification';
+        textSpan.style.cssText = 'margin-right:8px; pointer-events:none;';
+
+        container.onclick = () => injectUI();
+
+        let closeBtn = document.createElement('button');
+        closeBtn.innerText = '✕';
+        closeBtn.title = 'বন্ধ করুন';
+        closeBtn.style.cssText = 'background: rgba(255,255,255,0.25); color:white; border:none; width:20px; height:20px; border-radius:50%; font-size:11px; font-weight:bold; cursor:pointer; display:flex; align-items:center; justify-content:center; padding:0; outline:none; transition:0.2s;';
+        closeBtn.onmouseover = () => closeBtn.style.background = 'rgba(255,0,0,0.8)';
+        closeBtn.onmouseout = () => closeBtn.style.background = 'rgba(255,255,255,0.25)';
+        closeBtn.onclick = (e) => {
+            e.stopPropagation();
+            isToggleClosed = true;
+            container.remove();
+            let p = document.getElementById('auto-report-panel');
+            if(p) p.remove();
+        };
+
+        container.appendChild(textSpan);
+        container.appendChild(closeBtn);
+        document.body.appendChild(container);
+    }
+
+    // ৫. প্যানেল ইনজেকশন ও ট্রি রেন্ডারিং ইঞ্জিন
+    function injectUI() {
+        try {
+            if (document.getElementById('auto-report-panel')) return;
+            
+            const maps = getMappings();
+            const syncStatus = localStorage.getItem('microfin_sync_status');
+            const isReady = syncStatus === 'DONE';
+
+            const panel = document.createElement('div');
+            panel.id = 'auto-report-panel';
+            panel.style.cssText = 'position: fixed; bottom: 20px; right: 20px; background: #fff; border: 2px solid #8e44ad; border-radius: 8px; padding: 15px; z-index: 999999; box-shadow: 0 10px 30px rgba(0,0,0,0.35); width: 480px; max-width: 95vw; font-family: Arial;';
+
+            let filterHtml = '';
+            if (isReady) {
+                if (maps.role === 'HO') {
+                    let zones = [...new Set(Object.values(maps.zMap))].filter(Boolean).sort();
+                    filterHtml = `
+                        <select id="filter-selection" style="width:100%; padding:8px; margin-bottom:10px; font-weight:bold; border:1px solid #ccc; border-radius:4px;">
+                            <option value="ALL">🌐 Generate All Zones</option>
+                            ${zones.map(z => `<option value="${z}">${z}</option>`).join('')}
+                        </select>
+                    `;
+                } else if (maps.role === 'ZONE') {
+                    let areas = [...new Set(Object.values(maps.aMap))].filter(Boolean).sort();
+                    filterHtml = `
+                        <select id="filter-selection" style="width:100%; padding:8px; margin-bottom:10px; font-weight:bold; border:1px solid #ccc; border-radius:4px;">
+                            <option value="ALL">🌐 Generate All Areas</option>
+                            ${areas.map(a => `<option value="${a}">${a}</option>`).join('')}
+                        </select>
+                    `;
+                }
+            }
+
+            panel.innerHTML = `
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; background:#8e44ad; color:white; padding:8px 12px; border-radius:5px; margin:-15px -15px 12px -15px;">
+                    <strong style="font-size:15px; margin:0;">👥 Member Verification Report</strong>
+                    <div style="display:flex; gap:6px; align-items:center;">
+                        <button id="resync-btn" style="background:#f39c12; color:white; border:none; padding:4px 8px; font-size:11px; cursor:pointer; border-radius:3px; font-weight:bold;">🔄 Resync</button>
+                        <button id="close-panel-btn" style="background: linear-gradient(135deg, #ff416c, #ff4b2b); color: white; border: none; width: 24px; height: 24px; border-radius: 50%; font-size: 13px; font-weight: bold; cursor: pointer; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 5px rgba(255, 65, 108, 0.45); transition: 0.2s;">✕</button>
+                    </div>
+                </div>
+                ${filterHtml}
+                <button id="gen-btn" style="width:100%; background:${isReady ? '#8e44ad' : '#ccc'}; color:white; border:none; padding:10px; cursor:${isReady ? 'pointer' : 'not-allowed'}; font-weight:bold; border-radius:4px; font-size:14px;" ${!isReady ? 'disabled' : ''}>🚀 Generate Tree Report</button>
+
+                <div id="status-text" style="margin-top:10px; font-size:12px; font-weight:bold; text-align:center; color:#2c3e50;"></div>
+                <div id="table-container" style="max-height:300px; overflow:auto; margin-top:10px;"></div>
+                <button id="export-btn" style="display:none; width:100%; background:#27ae60; color:white; border:none; padding:10px; margin-top:10px; font-weight:bold; border-radius:4px; font-size:14px;">📥 Download Excel</button>
+            `;
+            document.body.appendChild(panel);
+
+            document.getElementById('resync-btn').onclick = () => {
+                isSyncing = true;
+                panel.remove();
+                document.querySelectorAll('.blockUI, .modal-backdrop, .blockOverlay, .sweet-overlay').forEach(el => el.remove());
+                sessionStorage.removeItem('mf_global_hierarchy_synced');
+                sessionStorage.removeItem('mf_auto_synced');
+                sessionStorage.removeItem('mf_cloned_url');
+                sessionStorage.removeItem('mf_user_type');
+                localStorage.removeItem('microfin_zMap');
+                localStorage.removeItem('microfin_aMap');
+                localStorage.removeItem('microfin_role');
+                localStorage.removeItem('microfin_branch_list');
+                localStorage.removeItem('microfin_sync_status');
+                localStorage.removeItem('mf_cloned_url_backup');
+                performZeroTouchSync(true);
+            };
+
+            document.getElementById('close-panel-btn').onclick = () => {
+                panel.remove();
+            };
+
+            if(isReady) {
+                const renderTable = function(report) {
+                    const { maps, rawBranches, fetchedCounts } = report;
+                    let now = new Date();
+                    let dtString = now.toLocaleDateString('en-GB') + ' ' + now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+
+                    let html = `<table id="reportTable" border="1" style="width:100%; border-collapse:collapse; font-size:12px;">
+                        <tr style="background:#e8f4f8; color:#2980b9;">
+                            <td colspan="4" style="padding:8px; font-size:13px; text-align:center; font-weight:bold;">
+                                🕒 Report Generated On: ${dtString}
+                            </td>
+                        </tr>
+                        <tr style="background:#ddd;">
+                            <th style="white-space:nowrap; padding:5px;">Hierarchy & Branch</th>
+                            <th style="padding:5px;">Active Member</th>
+                            <th style="padding:5px;">Verified Member</th>
+                            <th style="padding:5px;">Percentage</th>
+                        </tr>`;
+
+                    if (maps.role === 'HO') {
+                        let tree = {};
+                        rawBranches.forEach(b => {
+                            if(!tree[b.zone]) tree[b.zone] = {};
+                            if(!tree[b.zone][b.area]) tree[b.zone][b.area] = [];
+                            tree[b.zone][b.area].push(b);
+                        });
+                        
+                        for (let z in tree) {
+                            html += `<tr style="background:#0277bd; color:white;"><td colspan="4" style="white-space:nowrap; padding:5px;"><b>🏢 Zone: ${z}</b></td></tr>`;
+                            let zoneActive = 0, zoneVerified = 0;
+                            
+                            for (let a in tree[z]) {
+                                html += `<tr style="background:#e1f5fe; color:#01579b;"><td colspan="4" style="white-space:nowrap; padding:5px;">&nbsp;&nbsp;&nbsp;<b>📍 Area: ${a}</b></td></tr>`;
+                                let areaActive = 0, areaVerified = 0;
+                                
+                                for (let b of tree[z][a]) {
+                                    let active = fetchedCounts[b.id].active;
+                                    let verified = fetchedCounts[b.id].verified;
+                                    let perc = active > 0 ? Math.round((verified / active) * 100) : 0;
+                                    
+                                    areaActive += active;
+                                    areaVerified += verified;
+                                    
+                                    html += `<tr style="background:#fff;"><td style="white-space:nowrap; padding:5px;">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;🏷️ ${b.name}</td><td style="text-align:center; padding:5px;">${active}</td><td style="text-align:center; padding:5px;">${verified}</td><td style="text-align:center; padding:5px;"><b>${perc}%</b></td></tr>`;
+                                }
+                                let areaPerc = areaActive > 0 ? Math.round((areaVerified / areaActive) * 100) : 0;
+                                html += `<tr style="background:#fff2e6; font-weight:bold;"><td style="text-align:left; white-space:nowrap; padding:5px;">&nbsp;&nbsp;&nbsp;📊 Total Area (${a})</td><td style="text-align:center; padding:5px;">${areaActive}</td><td style="text-align:center; padding:5px;">${areaVerified}</td><td style="text-align:center; color:#d35400; padding:5px;">${areaPerc}%</td></tr>`;
+                                
+                                zoneActive += areaActive;
+                                zoneVerified += areaVerified;
+                            }
+                            let zonePerc = zoneActive > 0 ? Math.round((zoneVerified / zoneActive) * 100) : 0;
+                            html += `<tr style="background:#e6f4ea; font-weight:bold;"><td style="text-align:left; white-space:nowrap; padding:5px;">📊 Total Zone (${z})</td><td style="text-align:center; padding:5px;">${zoneActive}</td><td style="text-align:center; padding:5px;">${zoneVerified}</td><td style="text-align:center; color:green; padding:5px;">${zonePerc}%</td></tr>`;
+                        }
+                    } 
+                    else if (maps.role === 'ZONE') {
+                        let tree = {};
+                        rawBranches.forEach(b => {
+                            if(!tree[b.area]) tree[b.area] = [];
+                            tree[b.area].push(b);
+                        });
+                        for (let a in tree) {
+                            html += `<tr style="background:#0277bd; color:white;"><td colspan="4" style="white-space:nowrap; padding:5px;"><b>📍 Area: ${a}</b></td></tr>`;
+                            let areaActive = 0, areaVerified = 0;
+                            
+                            for (let b of tree[a]) {
+                                let active = fetchedCounts[b.id].active;
+                                let verified = fetchedCounts[b.id].verified;
+                                let perc = active > 0 ? Math.round((verified / active) * 100) : 0;
+                                
+                                areaActive += active;
+                                areaVerified += verified;
+                                
+                                html += `<tr style="background:#fff;"><td style="white-space:nowrap; padding:5px;">&nbsp;&nbsp;&nbsp;🏷️ ${b.name}</td><td style="text-align:center; padding:5px;">${active}</td><td style="text-align:center; padding:5px;">${verified}</td><td style="text-align:center; padding:5px;"><b>${perc}%</b></td></tr>`;
+                            }
+                            let areaPerc = areaActive > 0 ? Math.round((areaVerified / areaActive) * 100) : 0;
+                            html += `<tr style="background:#fff2e6; font-weight:bold;"><td style="text-align:left; white-space:nowrap; padding:5px;">📊 Total Area (${a})</td><td style="text-align:center; padding:5px;">${areaActive}</td><td style="text-align:center; padding:5px;">${areaVerified}</td><td style="text-align:center; color:#d35400; padding:5px;">${areaPerc}%</td></tr>`;
+                        }
+                    } 
+                    else { 
+                        let grandActive = 0, grandVerified = 0;
+                        
+                        for (let b of rawBranches) {
+                            let active = fetchedCounts[b.id].active;
+                            let verified = fetchedCounts[b.id].verified;
+                            let perc = active > 0 ? Math.round((verified / active) * 100) : 0;
+                            
+                            grandActive += active;
+                            grandVerified += verified;
+                            
+                            html += `<tr style="background:#fff;"><td style="white-space:nowrap; padding:5px;"><span style="font-weight:bold; color:#2c3e50;">🏷️ ${b.name}</span></td><td style="text-align:center; padding:5px;">${active}</td><td style="text-align:center; padding:5px;">${verified}</td><td style="text-align:center; padding:5px;"><b>${perc}%</b></td></tr>`;
+                        }
+                        if (rawBranches.length > 1) {
+                            let grandPerc = grandActive > 0 ? Math.round((grandVerified / grandActive) * 100) : 0;
+                            html += `<tr style="background:#fff2e6; font-weight:bold;"><td style="text-align:left; white-space:nowrap; padding:5px;">📊 Grand Total</td><td style="text-align:center; padding:5px;">${grandActive}</td><td style="text-align:center; padding:5px;">${grandVerified}</td><td style="text-align:center; color:#d35400; padding:5px;">${grandPerc}%</td></tr>`;
+                        }
+                    }
+                    html += `</table>`;
+                    document.getElementById('table-container').innerHTML = html;
+                };
+
+                document.getElementById('gen-btn').onclick = async () => {
+                    const btn = document.getElementById('gen-btn');
+                    const status = document.getElementById('status-text');
+                    const filterEl = document.getElementById('filter-selection');
+                    const selectedVal = filterEl ? filterEl.value : 'ALL';
+
+                    btn.disabled = true;
+                    status.innerText = "Capturing System Configuration...";
+                    document.getElementById('table-container').innerHTML = ''; 
+                    document.getElementById('export-btn').style.display = 'none';
+
+                    await ensureApiAndBranchList();
+
+                    let savedBListStr = localStorage.getItem('microfin_branch_list');
+                    let rawBranches = [];
+                    if (savedBListStr && JSON.parse(savedBListStr).length > 0) {
+                        let bList = JSON.parse(savedBListStr);
+                        rawBranches = bList.map(o => {
+                            let cleanId = (o.id === 'SELF' || o.id === '0' || o.id === '-1') ? '' : o.id;
+                            return {
+                                id: cleanId, 
+                                name: o.name, 
+                                area: maps.aMap[o.id] || o.area || 'Assigned Area', 
+                                zone: maps.zMap[o.id] || o.zone || 'Assigned Zone'
+                            };
+                        });
+                    } else {
+                        rawBranches = [{ id: '', name: "My Branch", area: 'Branch', zone: 'Branch' }];
+                    }
+
+                    if(selectedVal !== 'ALL') {
+                        if(maps.role === 'HO') rawBranches = rawBranches.filter(b => b.zone === selectedVal);
+                        else if(maps.role === 'ZONE') rawBranches = rawBranches.filter(b => b.area === selectedVal);
+                    }
+
+                    let currentReportStructure = { 
+                        maps: maps, 
+                        rawBranches: rawBranches, 
+                        fetchedCounts: {}
+                    };
+
+                    for (let b of rawBranches) {
+                        status.innerText = `Processing: ${b.name}`;
+                        let active = await fetchMemberCount(b.id, '');
+                        let verified = await fetchMemberCount(b.id, '1');
+                        currentReportStructure.fetchedCounts[b.id] = { active: active, verified: verified };
+                    }
+
+                    renderTable(currentReportStructure);
+                    
+                    status.innerText = "✅ Report Generated Successfully!";
+                    document.getElementById('export-btn').style.display = 'block';
+                    btn.disabled = false;
+                };
+
+                document.getElementById('export-btn').onclick = () => {
+                    let table = document.getElementById('reportTable');
+                    let blob = new Blob([`<html><head><meta charset="UTF-8"></head><body>${table.outerHTML}</body></html>`], {type: 'application/vnd.ms-excel'});
+                    let a = document.createElement('a');
+                    a.href = URL.createObjectURL(blob);
+                    let filterEl = document.getElementById('filter-selection');
+                    let fileName = filterEl && filterEl.value !== 'ALL' ? filterEl.value : 'All_Branches';
+                    let dateSuffix = new Date().toISOString().split('T')[0];
+                    a.download = `Hierarchical_Report_${fileName}_${dateSuffix}.xls`;
+                    a.click();
+                };
+            }
+        } catch (e) {
+            console.error("UI Injection Error: ", e);
+        }
+    }
+
+    // ৬. অটো স্টার্টার (শুধুমাত্র হোমপেজ / ড্যাশবোর্ড)
+    let hasSyncedThisPageLoad = false;
+
+    setInterval(() => {
+        if (window !== window.top) return;
+        let isOnDashboard = window.location.hash.includes('dashboard');
+
+        if (isOnDashboard) {
+            if (!hasSyncedThisPageLoad) {
+                hasSyncedThisPageLoad = true;
+                if (localStorage.getItem('microfin_sync_status') !== 'DONE') {
+                    performZeroTouchSync();
+                }
+            } 
+            
+            if (!document.getElementById('auto-report-panel') && !document.getElementById('member-report-toggle-btn') && !isToggleClosed) {
+                try {
+                    injectToggleBtn(); // Floating pill button on Dashboard immediately
+                } catch(e) {
+                    console.error("Failed to inject UI: ", e);
+                }
+            }
+        } else {
+            hasSyncedThisPageLoad = false;
+            isToggleClosed = false; 
+            let panel = document.getElementById('auto-report-panel');
+            if (panel) panel.remove();
+            let toggleBtn = document.getElementById('member-report-toggle-btn');
+            if (toggleBtn) toggleBtn.remove();
+        }
+    }, 1000);
 
 })();
