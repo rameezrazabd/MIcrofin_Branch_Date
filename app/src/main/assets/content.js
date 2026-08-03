@@ -4,7 +4,7 @@
 (function checkAppUpdate() {
     const CURRENT_VERSION = "1.1"; // বর্তমান অ্যাপ ভার্সন
     
-    // ⚠️ নিচে YOUR_USERNAME এর জায়গায় আপনার গিটহাবের আসল ইউজারনেম বসিয়ে দিন 
+    // ⚠️ নিচে YOUR_USERNAME এর জায়গায় আপনার গিটহাবের আসল ইউজারনেম বসিয়ে দিন (যেমন: rameez123 ইত্যাদি)
     const UPDATE_JSON_URL = "https://raw.githubusercontent.com/rameezrazabd/Microfin_Branch_Date/main/update.json"; 
 
     setTimeout(() => {
@@ -457,8 +457,8 @@
 
         panel.innerHTML = `
             <div id="bde-drag-header" style="background:#2c3e50; color:white; padding:7px 12px; display:flex; justify-content:space-between; align-items:center; cursor:move; flex-shrink:0;">
-                <strong style="font-size:13px;">📅 Branch Date Extractor</strong>
-                <button id="bde-close-date-panel" style="background:none; border:none; color:#e74c3c; font-size:16px; cursor:pointer; font-weight:bold;">✖</button>
+                <strong style="font-size:13px;">📅 Branch Date Extractor v3.1</strong>
+                <button id="bde-close-date-panel" title="বন্ধ করুন" style="background: linear-gradient(135deg, #ff416c, #ff4b2b); color: white; border: none; width: 26px; height: 26px; border-radius: 50%; font-size: 14px; font-weight: bold; cursor: pointer; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 6px rgba(255, 65, 108, 0.45); transition: all 0.2s ease; outline: none; padding: 0;" onmouseover="this.style.transform='scale(1.15)'; this.style.boxShadow='0 3px 10px rgba(255, 65, 108, 0.7)';" onmouseout="this.style.transform='scale(1)'; this.style.boxShadow='0 2px 6px rgba(255, 65, 108, 0.45)';" onmousedown="this.style.transform='scale(0.95)';">✕</button>
             </div>
 
             <div style="padding:6px; display:flex; flex-direction:column; flex:1; overflow:hidden;">
@@ -536,30 +536,14 @@
 
         document.getElementById('bde-start-fetch-btn').onclick = startFetchingDates;
 
-        document.getElementById('bde-export-excel-btn').onclick = async () => {
+        document.getElementById('bde-export-excel-btn').onclick = () => {
             let table = document.querySelector("#bde-table-output table");
             if (!table) return;
 
             let statusMsg = document.getElementById('bde-status-msg');
-            if(statusMsg) statusMsg.innerHTML = "<span style='color:#2980b9;'>⏳ Excel (.xlsx) তৈরি হচ্ছে...</span>";
+            if(statusMsg) statusMsg.innerHTML = "<span style='color:#2980b9;'>⏳ Excel ফাইল তৈরি হচ্ছে...</span>";
 
             try {
-                if (!window.XLSX) {
-                    let script = document.createElement('script');
-                    script.src = "https://cdn.jsdelivr.net/npm/xlsx-js-style@1.2.0/dist/xlsx.bundle.js";
-                    document.head.appendChild(script);
-                    await new Promise((resolve, reject) => {
-                        script.onload = resolve;
-                        script.onerror = () => {
-                            let backup = document.createElement('script');
-                            backup.src = "https://unpkg.com/xlsx-js-style@1.2.0/dist/xlsx.bundle.js";
-                            document.head.appendChild(backup);
-                            backup.onload = resolve;
-                            backup.onerror = () => reject(new Error("Excel Style Engine লোড করা সম্ভব হয়নি"));
-                        };
-                    });
-                }
-
                 let allRows = [];
                 let overdueRows = [];
                 
@@ -571,12 +555,12 @@
                         let statusText = isOverdue ? "🔴 পিছিয়ে আছে" : "✅ সঠিক";
                         
                         let rowObj = {
-                            "শাখার নাম": branch,
-                            "স্ট্যাটাস": statusText,
-                            "MIS ডেট": tr.cells[1].innerText.trim(),
-                            "MIS বিলম্ব": tr.cells[2].innerText.trim(),
-                            "AIS ডেট": tr.cells[3].innerText.trim(),
-                            "AIS বিলম্ব": tr.cells[4].innerText.trim()
+                            branch: branch,
+                            status: statusText,
+                            misDate: tr.cells[1].innerText.trim(),
+                            misLag: tr.cells[2].innerText.trim(),
+                            aisDate: tr.cells[3].innerText.trim(),
+                            aisLag: tr.cells[4].innerText.trim()
                         };
 
                         allRows.push(rowObj);
@@ -584,94 +568,90 @@
                     }
                 });
 
-                function formatWorksheet(ws, rowCount) {
-                    ws['!cols'] = [
-                        { wch: 38 }, // শাখার নাম
-                        { wch: 16 }, // স্ট্যাটাস
-                        { wch: 15 }, // MIS ডেট
-                        { wch: 12 }, // MIS বিলম্ব
-                        { wch: 15 }, // AIS ডেট
-                        { wch: 12 }  // AIS বিলম্ব
-                    ];
-                
-                    let headerColors = ["2C3E50", "2C3E50", "2980B9", "2980B9", "27AE60", "27AE60"];
-                    let colNames = ['A', 'B', 'C', 'D', 'E', 'F'];
-                
-                    colNames.forEach((col, idx) => {
-                        let cellRef = col + '1';
-                        if (ws[cellRef]) {
-                            ws[cellRef].s = {
-                                fill: { patternType: "solid", fgColor: { rgb: headerColors[idx] } },
-                                font: { name: "Calibri", sz: 11, bold: true, color: { rgb: "FFFFFF" } },
-                                alignment: { horizontal: idx === 0 ? "left" : "center", vertical: "center" },
-                                border: {
-                                    top: { style: "thin", color: { rgb: "BDC3C7" } },
-                                    bottom: { style: "thin", color: { rgb: "BDC3C7" } },
-                                    left: { style: "thin", color: { rgb: "BDC3C7" } },
-                                    right: { style: "thin", color: { rgb: "BDC3C7" } }
-                                }
-                            };
+                let xml = `<?xml version="1.0" encoding="UTF-8"?>
+<?mso-application progid="Excel.Sheet"?>
+<Workbook xmlns="urn:schemas-microsoft-com:office:spreadsheet"
+ xmlns:o="urn:schemas-microsoft-com:office:office"
+ xmlns:x="urn:schemas-microsoft-com:office:excel"
+ xmlns:ss="urn:schemas-microsoft-com:office:spreadsheet"
+ xmlns:html="http://www.w3.org/TR/REC-html40">
+ <Styles>
+  <Style ss:ID="Default" ss:Name="Normal">
+   <Alignment ss:Vertical="Center"/>
+   <Borders>
+    <Border ss:Position="Bottom" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#D1D8E0"/>
+    <Border ss:Position="Left" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#D1D8E0"/>
+    <Border ss:Position="Right" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#D1D8E0"/>
+    <Border ss:Position="Top" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#D1D8E0"/>
+   </Borders>
+   <Font ss:FontName="Calibri" ss:Size="10" ss:Color="#2C3E50"/>
+  </Style>
+  <Style ss:ID="H_Branch"><Interior ss:Color="#2C3E50" ss:Pattern="Solid"/><Font ss:FontName="Calibri" ss:Size="11" ss:Bold="1" ss:Color="#FFFFFF"/><Alignment ss:Horizontal="Left" ss:Vertical="Center"/></Style>
+  <Style ss:ID="H_Status"><Interior ss:Color="#2C3E50" ss:Pattern="Solid"/><Font ss:FontName="Calibri" ss:Size="11" ss:Bold="1" ss:Color="#FFFFFF"/><Alignment ss:Horizontal="Center" ss:Vertical="Center"/></Style>
+  <Style ss:ID="H_MIS"><Interior ss:Color="#2980B9" ss:Pattern="Solid"/><Font ss:FontName="Calibri" ss:Size="11" ss:Bold="1" ss:Color="#FFFFFF"/><Alignment ss:Horizontal="Center" ss:Vertical="Center"/></Style>
+  <Style ss:ID="H_AIS"><Interior ss:Color="#27AE60" ss:Pattern="Solid"/><Font ss:FontName="Calibri" ss:Size="11" ss:Bold="1" ss:Color="#FFFFFF"/><Alignment ss:Horizontal="Center" ss:Vertical="Center"/></Style>
+  
+  <Style ss:ID="R_Normal_L" ss:Parent="Default"><Alignment ss:Horizontal="Left" ss:Vertical="Center"/></Style>
+  <Style ss:ID="R_Normal_C" ss:Parent="Default"><Alignment ss:Horizontal="Center" ss:Vertical="Center"/></Style>
+  <Style ss:ID="R_Normal_S" ss:Parent="Default"><Font ss:FontName="Calibri" ss:Size="10" ss:Bold="1" ss:Color="#27AE60"/><Alignment ss:Horizontal="Center" ss:Vertical="Center"/></Style>
+
+  <Style ss:ID="R_Delay_L" ss:Parent="Default"><Interior ss:Color="#FFF5F5" ss:Pattern="Solid"/><Alignment ss:Horizontal="Left" ss:Vertical="Center"/></Style>
+  <Style ss:ID="R_Delay_C" ss:Parent="Default"><Interior ss:Color="#FFF5F5" ss:Pattern="Solid"/><Alignment ss:Horizontal="Center" ss:Vertical="Center"/></Style>
+  <Style ss:ID="R_Delay_S" ss:Parent="Default"><Interior ss:Color="#FFF5F5" ss:Pattern="Solid"/><Font ss:FontName="Calibri" ss:Size="10" ss:Bold="1" ss:Color="#C0392B"/><Alignment ss:Horizontal="Center" ss:Vertical="Center"/></Style>
+
+  <Style ss:ID="Lag_Red" ss:Parent="Default"><Font ss:FontName="Calibri" ss:Size="10" ss:Bold="1" ss:Color="#C0392B"/><Alignment ss:Horizontal="Center" ss:Vertical="Center"/></Style>
+  <Style ss:ID="Lag_Org" ss:Parent="Default"><Font ss:FontName="Calibri" ss:Size="10" ss:Bold="1" ss:Color="#D35400"/><Alignment ss:Horizontal="Center" ss:Vertical="Center"/></Style>
+  <Style ss:ID="Lag_Grn" ss:Parent="Default"><Font ss:FontName="Calibri" ss:Size="10" ss:Color="#27AE60"/><Alignment ss:Horizontal="Center" ss:Vertical="Center"/></Style>
+ </Styles>`;
+
+                function buildWorksheet(sheetName, dataRows) {
+                    let sXml = ` <Worksheet ss:Name="${sheetName}">\n  <Table>\n   <Column ss:Width="240"/>\n   <Column ss:Width="110"/>\n   <Column ss:Width="95"/>\n   <Column ss:Width="75"/>\n   <Column ss:Width="95"/>\n   <Column ss:Width="75"/>\n   <Row ss:Height="22">\n    <Cell ss:StyleID="H_Branch"><Data ss:Type="String">শাখার নাম</Data></Cell>\n    <Cell ss:StyleID="H_Status"><Data ss:Type="String">স্ট্যাটাস</Data></Cell>\n    <Cell ss:StyleID="H_MIS"><Data ss:Type="String">MIS ডেট</Data></Cell>\n    <Cell ss:StyleID="H_MIS"><Data ss:Type="String">বিলম্ব</Data></Cell>\n    <Cell ss:StyleID="H_AIS"><Data ss:Type="String">AIS ডেট</Data></Cell>\n    <Cell ss:StyleID="H_AIS"><Data ss:Type="String">বিলম্ব</Data></Cell>\n   </Row>`;
+
+                    dataRows.forEach(r => {
+                        let isDelay = r.status.includes("পিছিয়ে") || r.status.includes("🔴");
+                        let cL = isDelay ? "R_Delay_L" : "R_Normal_L";
+                        let cC = isDelay ? "R_Delay_C" : "R_Normal_C";
+                        let cS = isDelay ? "R_Delay_S" : "R_Normal_S";
+                        
+                        function getLagStyle(valStr, fallbackStyle) {
+                            let v = parseInt(valStr || "0");
+                            if (isNaN(v)) return fallbackStyle;
+                            if (v > 2) return "Lag_Red";
+                            if (v > 0) return "Lag_Org";
+                            return "Lag_Grn";
                         }
+
+                        let mStyle = getLagStyle(r.misLag, cC);
+                        let aStyle = getLagStyle(r.aisLag, cC);
+
+                        sXml += `\n   <Row ss:Height="18">\n    <Cell ss:StyleID="${cL}"><Data ss:Type="String">${r.branch}</Data></Cell>\n    <Cell ss:StyleID="${cS}"><Data ss:Type="String">${r.status}</Data></Cell>\n    <Cell ss:StyleID="${cC}"><Data ss:Type="String">${r.misDate}</Data></Cell>\n    <Cell ss:StyleID="${mStyle}"><Data ss:Type="String">${r.misLag}</Data></Cell>\n    <Cell ss:StyleID="${cC}"><Data ss:Type="String">${r.aisDate}</Data></Cell>\n    <Cell ss:StyleID="${aStyle}"><Data ss:Type="String">${r.aisLag}</Data></Cell>\n   </Row>`;
                     });
-                
-                    for (let r = 2; r <= rowCount + 1; r++) {
-                        let statusCell = ws['B' + r];
-                        let isDelayed = statusCell && statusCell.v && (statusCell.v.toString().includes("পিছিয়ে") || statusCell.v.toString().includes("🔴"));
-                        let rowBgColor = isDelayed ? "FFF5F5" : "FFFFFF";
-                
-                        colNames.forEach((col, idx) => {
-                            let cellRef = col + r;
-                            if (ws[cellRef]) {
-                                let fontColor = "2C3E50";
-                                let isBold = false;
-                
-                                if (idx === 1 && isDelayed) { fontColor = "C0392B"; isBold = true; }
-                                else if (idx === 1 && !isDelayed) { fontColor = "27AE60"; isBold = true; }
-                                else if (idx === 3 || idx === 5) {
-                                    let val = parseInt(ws[cellRef].v || "0");
-                                    if (val > 2) { fontColor = "C0392B"; isBold = true; }
-                                    else if (val > 0) { fontColor = "D35400"; isBold = true; }
-                                    else { fontColor = "27AE60"; }
-                                }
-                
-                                ws[cellRef].s = {
-                                    fill: { patternType: "solid", fgColor: { rgb: rowBgColor } },
-                                    font: { name: "Calibri", sz: 10, bold: isBold, color: { rgb: fontColor } },
-                                    alignment: { horizontal: idx === 0 ? "left" : "center", vertical: "center" },
-                                    border: {
-                                        top: { style: "thin", color: { rgb: "D1D8E0" } },
-                                        bottom: { style: "thin", color: { rgb: "D1D8E0" } },
-                                        left: { style: "thin", color: { rgb: "D1D8E0" } },
-                                        right: { style: "thin", color: { rgb: "D1D8E0" } }
-                                    }
-                                };
-                            }
-                        });
-                    }
-                    return ws;
+
+                    sXml += `\n  </Table>\n </Worksheet>`;
+                    return sXml;
                 }
 
-                let wb = XLSX.utils.book_new();
-                
-                let wsAll = formatWorksheet(XLSX.utils.json_to_sheet(allRows), allRows.length);
-                XLSX.utils.book_append_sheet(wb, wsAll, "🏢 সকল শাখা");
+                xml += buildWorksheet("🏢 সকল শাখা", allRows);
+                xml += buildWorksheet("⚠️ পিছিয়ে আছে", overdueRows);
+                xml += `\n</Workbook>`;
 
-                let wsOverdue = formatWorksheet(XLSX.utils.json_to_sheet(overdueRows), overdueRows.length);
-                XLSX.utils.book_append_sheet(wb, wsOverdue, "⚠️ পিছিয়ে আছে");
+                let fileName = `Branch_Dates_${new Date().toISOString().split('T')[0]}.xls`;
 
-                let fileName = `Branch_Dates_${new Date().toISOString().split('T')[0]}.xlsx`;
-
-                if (window.AndroidDownloader && window.AndroidDownloader.saveBase64File) {
-                    let base64Data = XLSX.write(wb, { bookType: 'xlsx', type: 'base64' });
-                    window.AndroidDownloader.saveBase64File(base64Data, fileName, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
-                } else if (window.AndroidDownloader && window.AndroidDownloader.saveExcel) {
-                    let csvContent = "\uFEFF" + XLSX.utils.sheet_to_csv(wsAll);
-                    window.AndroidDownloader.saveExcel(csvContent, `Branch_Dates_${new Date().toISOString().split('T')[0]}.csv`);
+                if (window.AndroidDownloader && window.AndroidDownloader.saveExcel) {
+                    window.AndroidDownloader.saveExcel(xml, fileName);
                 } else {
-                    XLSX.writeFile(wb, fileName);
+                    let blob = new Blob([xml], { type: 'application/vnd.ms-excel;charset=utf-8;' });
+                    let url = URL.createObjectURL(blob);
+                    let link = document.createElement("a");
+                    link.href = url;
+                    link.download = fileName;
+                    document.body.appendChild(link);
+                    link.click();
+                    document.body.removeChild(link);
+                    URL.revokeObjectURL(url);
                 }
 
-                if(statusMsg) statusMsg.innerHTML = "<span style='color:green;'>✅ Excel (.xlsx) সফলভাবে ডাউনলোড হয়েছে!</span>";
+                if(statusMsg) statusMsg.innerHTML = "<span style='color:green;'>✅ Excel ফাইলটি সফলভাবে ডাউনলোড হয়েছে!</span>";
             } catch(err) {
                 console.error(err);
                 if(statusMsg) statusMsg.innerHTML = `<span style='color:red;'>❌ Excel ডাউনলোডে সমস্যা: ${err.message}</span>`;
@@ -1205,10 +1185,10 @@
         panel.innerHTML = `
             <div id="ghost-header" style="background:#2c3e50; color:white; padding:8px 10px; cursor:move; display:flex; justify-content:space-between; align-items:center;">
                 <strong id="panel-title" style="font-size:12px; pointer-events:none; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">🚀 Auditor Pro</strong>
-                <div style="display:flex; align-items:center; gap:4px;">
+                <div style="display:flex; align-items:center; gap:6px;">
                     <button id="sync-locations-btn" style="display:none; background:#f39c12; border:none; color:white; font-size:10px; cursor:pointer; padding:2px 5px; border-radius:2px; font-weight:bold;">🔄 Sync</button>
-                    <button id="ghost-min" style="background:none; border:none; color:white; font-size:15px; cursor:pointer; padding:0 2px; font-weight:bold;">➕</button>
-                    <button id="ghost-close" style="background:none; border:none; color:#e74c3c; font-size:13px; cursor:pointer; padding:0 2px;">✖</button>
+                    <button id="ghost-min" title="ছোট/বড় করুন" style="background: #34495e; border:none; color:white; width: 22px; height: 22px; border-radius: 4px; font-size:13px; cursor:pointer; font-weight:bold; display:flex; align-items:center; justify-content:center; transition: all 0.2s;">➕</button>
+                    <button id="ghost-close" title="বন্ধ করুন" style="background: linear-gradient(135deg, #ff416c, #ff4b2b); color: white; border: none; width: 22px; height: 22px; border-radius: 50%; font-size: 12px; font-weight: bold; cursor: pointer; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 5px rgba(255, 65, 108, 0.45); transition: all 0.2s ease; outline: none; padding: 0;" onmouseover="this.style.transform='scale(1.15)'; this.style.boxShadow='0 3px 8px rgba(255, 65, 108, 0.7)';" onmouseout="this.style.transform='scale(1)'; this.style.boxShadow='0 2px 5px rgba(255, 65, 108, 0.45)';" onmousedown="this.style.transform='scale(0.95)';">✕</button>
                 </div>
             </div>
             
