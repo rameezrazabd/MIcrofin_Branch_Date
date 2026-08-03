@@ -13,10 +13,10 @@ try {
 // 🔔 0. AUTO UPDATE NOTIFICATION SYSTEM
 // ========================================================================
 (function checkAppUpdate() {
-    const CURRENT_VERSION = "1.0"; // বর্তমান অ্যাপ ভার্সন
+    const CURRENT_VERSION = "1.3"; // বর্তমান অ্যাপ ভার্সন
     
-    // ⚠️ নিচে YOUR_USERNAME এর জায়গায় আপনার গিটহাবের আসল ইউজারনেম বসিয়ে দিন (যেমন: rameez123 ইত্যাদি)
-    const UPDATE_JSON_URL = "https://raw.githubusercontent.com/User_Name/Microfin_Branch_Date/main/update.json"; 
+    // ⚠️ নিচে YOUR_USERNAME এর জায়গায় আপনার গিটহাবের আসল ইউজারনেম বসিয়ে দিন 
+    const UPDATE_JSON_URL = "https://raw.githubusercontent.com/rameezrazabd/Microfin_Branch_Date/main/update.json"; 
 
     setTimeout(() => {
         fetch(UPDATE_JSON_URL + "?t=" + new Date().getTime())
