@@ -120,41 +120,44 @@
                     try {
                         let doc = iframe.contentDocument || iframe.contentWindow.document;
                         let win = iframe.contentWindow;
+                        let uType = localStorage.getItem('mf_user_type') || 'HO';
+                        let isBranchRole = (uType === 'BRANCH' || targetId === 'SELF' || (branchesToProcess && branchesToProcess.length === 1 && branchesToProcess[0].id === 'SELF'));
 
-                        for(let i=0; i<6; i++) {
-                            let reportLvlDropdown = doc.querySelector('select[name="cbo_report_level"]');
-                            let branchDropdown = doc.querySelector('select[name="cbo_branch"]');
-                            let searchBtn = doc.querySelector('button[type="submit"]') || doc.querySelector('.btn-primary') || doc.querySelector('.btn-success');
+                        if (!isBranchRole) {
+                            for(let i=0; i<6; i++) {
+                                let reportLvlDropdown = doc.querySelector('select[name="cbo_report_level"]');
+                                let branchDropdown = doc.querySelector('select[name="cbo_branch"]');
+                                let searchBtn = doc.querySelector('button[type="submit"]') || doc.querySelector('.btn-primary') || doc.querySelector('.btn-success');
 
-                            if (reportLvlDropdown || branchDropdown) {
-                                
-                                if (reportLvlDropdown) {
-                                    triggerVueChange(reportLvlDropdown, '1', win);
-                                    await new Promise(r => setTimeout(r, 800));
+                                if (reportLvlDropdown || branchDropdown) {
+                                    if (reportLvlDropdown) {
+                                        triggerVueChange(reportLvlDropdown, '1', win);
+                                        await new Promise(r => setTimeout(r, 800));
 
-                                    if (level === '3' && targetId !== 'ALL') {
-                                        let zoneSel = await waitForOptions(doc, 'select[name="cbo_zone"]');
-                                        if (zoneSel) { triggerVueChange(zoneSel, targetId, win); await new Promise(r => setTimeout(r, 800)); }
-                                    } 
-                                    else if (level === '2' && targetId !== 'ALL') {
-                                        let areaSel = await waitForOptions(doc, 'select[name="cbo_area"]');
-                                        if (areaSel) { triggerVueChange(areaSel, targetId, win); await new Promise(r => setTimeout(r, 800)); }
+                                        if (level === '3' && targetId !== 'ALL') {
+                                            let zoneSel = await waitForOptions(doc, 'select[name="cbo_zone"]');
+                                            if (zoneSel) { triggerVueChange(zoneSel, targetId, win); await new Promise(r => setTimeout(r, 800)); }
+                                        } 
+                                        else if (level === '2' && targetId !== 'ALL') {
+                                            let areaSel = await waitForOptions(doc, 'select[name="cbo_area"]');
+                                            if (areaSel) { triggerVueChange(areaSel, targetId, win); await new Promise(r => setTimeout(r, 800)); }
+                                        }
                                     }
-                                }
 
-                                if (level === '1' && targetId !== 'ALL') {
-                                    let bSel = await waitForOptions(doc, 'select[name="cbo_branch"]');
-                                    if (bSel) { triggerVueChange(bSel, targetId, win); await new Promise(r => setTimeout(r, 800)); }
-                                }
+                                    if (level === '1' && targetId !== 'ALL') {
+                                        let bSel = await waitForOptions(doc, 'select[name="cbo_branch"]');
+                                        if (bSel) { triggerVueChange(bSel, targetId, win); await new Promise(r => setTimeout(r, 800)); }
+                                    }
 
-                                if (searchBtn) {
-                                    searchBtn.removeAttribute('disabled');
-                                    searchBtn.click();
-                                    await new Promise(r => setTimeout(r, 1500));
+                                    if (searchBtn) {
+                                        searchBtn.removeAttribute('disabled');
+                                        searchBtn.click();
+                                        await new Promise(r => setTimeout(r, 1500));
+                                    }
+                                    break;
                                 }
-                                break;
+                                await new Promise(r => setTimeout(r, 500));
                             }
-                            await new Promise(r => setTimeout(r, 500));
                         }
 
                         async function clickWhenReady(text, isExact = false, maxWaitMs = 15000) {
@@ -182,13 +185,15 @@
                             });
                         }
 
-                        if (mode === 'MIS') {
-                            await clickWhenReady('branch performance', false, 15000);
-                            await new Promise(r => setTimeout(r, 1000));
-                            await clickWhenReady('more...', true, 15000);
-                        }
-                        else if (mode === 'AIS') {
-                            await clickWhenReady('branch status', false, 15000);
+                        if (!isBranchRole) {
+                            if (mode === 'MIS') {
+                                await clickWhenReady('branch performance', false, 15000);
+                                await new Promise(r => setTimeout(r, 1000));
+                                await clickWhenReady('more...', true, 15000);
+                            }
+                            else if (mode === 'AIS') {
+                                await clickWhenReady('branch status', false, 15000);
+                            }
                         }
 
                         let pollCount = 0;
@@ -197,6 +202,26 @@
                             if (pollCount > 35) {
                                 clearInterval(poll); clearTimeout(timeout);
                                 iframe.remove(); resolve({}); return;
+                            }
+
+                            if (isBranchRole) {
+                                let match = null;
+                                let checkEls = doc.querySelectorAll('table tr, .card, .widget, .dashboard-box, table');
+                                for(let el of checkEls) {
+                                    let m = el.textContent.match(/\d{1,2}\s+[a-zA-Z]{3},\s+\d{4}|\d{4}-\d{2}-\d{2}|\d{2}-\d{2}-\d{4}|\d{2}\/\d{2}\/\d{4}/g);
+                                    if (m && m.length > 0) { match = m; break; }
+                                }
+                                if (!match && doc.body) {
+                                    match = doc.body.textContent.match(/\d{1,2}\s+[a-zA-Z]{3},\s+\d{4}|\d{4}-\d{2}-\d{2}|\d{2}-\d{2}-\d{4}|\d{2}\/\d{2}\/\d{4}/g);
+                                }
+                                if (match && match.length > 0) {
+                                    clearInterval(poll); clearTimeout(timeout);
+                                    isProcessed = true;
+                                    let finalDate = match[match.length - 1].replace(/\s+/g, ' ');
+                                    let dataMap = { 'self': finalDate, 'mybranch': finalDate, 'default': finalDate };
+                                    iframe.remove(); resolve(dataMap); return;
+                                }
+                                return;
                             }
 
                             let exportContainers = doc.querySelectorAll('#export-data, table');
@@ -764,8 +789,8 @@
                 let bCodeMatch = b.name.match(/(?:^|-|\s)(\d{3,4})(?:$|-|\s)/);
                 let bCode = bCodeMatch ? bCodeMatch[1] : b.name.replace(/[^a-z]/gi, '').toLowerCase();
 
-                let aisDate = aisDataMap[bCode] || "N/A";
-                let misDate = misDataMap[bCode] || "N/A";
+                let aisDate = aisDataMap[bCode] || aisDataMap['mybranch'] || aisDataMap['self'] || aisDataMap['default'] || (branchesToProcess.length === 1 ? Object.values(aisDataMap)[0] : null) || "N/A";
+                let misDate = misDataMap[bCode] || misDataMap['mybranch'] || misDataMap['self'] || misDataMap['default'] || (branchesToProcess.length === 1 ? Object.values(misDataMap)[0] : null) || "N/A";
 
                 let aisLag = calculateLag(aisDate);
                 let misLag = calculateLag(misDate);
