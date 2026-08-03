@@ -15,7 +15,7 @@ try {
 (function checkAppUpdate() {
     const CURRENT_VERSION = "1.3"; // বর্তমান অ্যাপ ভার্সন
     
-    // ⚠️ নিচে YOUR_USERNAME এর জায়গায় আপনার গিটহাবের আসল ইউজারনেম বসিয়ে দিন (যেমন: rameez123 ইত্যাদি)
+    // ⚠️ নিচে YOUR_USERNAME এর জায়গায় আপনার গিটহাবের আসল ইউজারনেম বসিয়ে দিন
     const UPDATE_JSON_URL = "https://raw.githubusercontent.com/rameezrazabd/Microfin_Branch_Date/main/update.json"; 
 
     setTimeout(() => {
@@ -107,6 +107,10 @@ try {
             return;
         }
         window._isCentralSyncRunning = true;
+        sessionStorage.removeItem('mf_cloned_url');
+        sessionStorage.removeItem('mf_cloned_headers');
+        localStorage.removeItem('mf_cloned_url_backup');
+        localStorage.removeItem('mf_cloned_headers_backup');
 
         let toast = document.getElementById('central-sync-toast');
         if (!toast) {
@@ -315,7 +319,16 @@ try {
         if (window.location.hash.includes('login') || window.location.hash.includes('logout')) {
             sessionStorage.removeItem('mf_global_hierarchy_synced');
             sessionStorage.removeItem('mf_auto_synced');
+            sessionStorage.removeItem('mf_cloned_url');
+            sessionStorage.removeItem('mf_cloned_headers');
+            sessionStorage.removeItem('mf_user_type');
             localStorage.removeItem('microfin_sync_status');
+            localStorage.removeItem('mf_cloned_url_backup');
+            localStorage.removeItem('mf_cloned_headers_backup');
+            localStorage.removeItem('microfin_branch_list');
+            localStorage.removeItem('microfin_role');
+            localStorage.removeItem('microfin_aMap');
+            localStorage.removeItem('microfin_zMap');
         } else if (window.location.hash.includes('dashboard')) {
             if (sessionStorage.getItem('mf_global_hierarchy_synced') !== 'TRUE' && !window._isCentralSyncRunning) {
                 window.runGlobalHierarchySync(false);
