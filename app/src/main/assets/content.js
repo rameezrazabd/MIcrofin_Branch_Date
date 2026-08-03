@@ -2317,14 +2317,14 @@ try {
 
             const panel = document.createElement('div');
             panel.id = 'auto-report-panel';
-            panel.style.cssText = 'position: fixed; bottom: 20px; right: 20px; background: #fff; border: 2px solid #8e44ad; border-radius: 8px; padding: 15px; z-index: 999999; box-shadow: 0 10px 30px rgba(0,0,0,0.35); width: 480px; max-width: 95vw; font-family: Arial;';
+            panel.style.cssText = 'position: fixed; top: 5px; left: 50%; transform: translateX(-50%); background: #fff; border: 2px solid #8e44ad; border-radius: 8px; box-shadow: 0 10px 30px rgba(0,0,0,0.45); width: 97vw; max-width: 700px; max-height: 90vh; display: flex; flex-direction: column; font-family: Arial; z-index: 999999; overflow: hidden;';
 
             let filterHtml = '';
             if (isReady) {
                 if (maps.role === 'HO') {
                     let zones = [...new Set(Object.values(maps.zMap))].filter(Boolean).sort();
                     filterHtml = `
-                        <select id="filter-selection" style="width:100%; padding:8px; margin-bottom:10px; font-weight:bold; border:1px solid #ccc; border-radius:4px;">
+                        <select id="filter-selection" style="width:100%; padding:6px; margin-bottom:8px; font-weight:bold; border:1px solid #ccc; border-radius:4px; font-size:12px;">
                             <option value="ALL">🌐 Generate All Zones</option>
                             ${zones.map(z => `<option value="${z}">${z}</option>`).join('')}
                         </select>
@@ -2332,7 +2332,7 @@ try {
                 } else if (maps.role === 'ZONE') {
                     let areas = [...new Set(Object.values(maps.aMap))].filter(Boolean).sort();
                     filterHtml = `
-                        <select id="filter-selection" style="width:100%; padding:8px; margin-bottom:10px; font-weight:bold; border:1px solid #ccc; border-radius:4px;">
+                        <select id="filter-selection" style="width:100%; padding:6px; margin-bottom:8px; font-weight:bold; border:1px solid #ccc; border-radius:4px; font-size:12px;">
                             <option value="ALL">🌐 Generate All Areas</option>
                             ${areas.map(a => `<option value="${a}">${a}</option>`).join('')}
                         </select>
@@ -2341,21 +2341,44 @@ try {
             }
 
             panel.innerHTML = `
-                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; background:#8e44ad; color:white; padding:8px 12px; border-radius:5px; margin:-15px -15px 12px -15px;">
-                    <strong style="font-size:15px; margin:0;">👥 Member Verification Report</strong>
+                <div id="mem-report-header" style="background:#8e44ad; color:white; padding:8px 12px; cursor:move; display:flex; justify-content:space-between; align-items:center; flex-shrink:0;">
+                    <strong style="font-size:14px; pointer-events:none; white-space:nowrap;">👥 Member Verification Report</strong>
                     <div style="display:flex; gap:6px; align-items:center;">
                         <button id="resync-btn" style="background:#f39c12; color:white; border:none; padding:4px 8px; font-size:11px; cursor:pointer; border-radius:3px; font-weight:bold;">🔄 Resync</button>
-                        <button id="close-panel-btn" style="background: linear-gradient(135deg, #ff416c, #ff4b2b); color: white; border: none; width: 24px; height: 24px; border-radius: 50%; font-size: 13px; font-weight: bold; cursor: pointer; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 5px rgba(255, 65, 108, 0.45); transition: 0.2s;">✕</button>
+                        <button id="close-panel-btn" title="বন্ধ করুন" style="background: linear-gradient(135deg, #ff416c, #ff4b2b); color: white; border: none; width: 25px; height: 25px; border-radius: 50%; font-size: 13px; font-weight: bold; cursor: pointer; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 5px rgba(255, 65, 108, 0.45); transition: 0.2s;">✕</button>
                     </div>
                 </div>
-                ${filterHtml}
-                <button id="gen-btn" style="width:100%; background:${isReady ? '#8e44ad' : '#ccc'}; color:white; border:none; padding:10px; cursor:${isReady ? 'pointer' : 'not-allowed'}; font-weight:bold; border-radius:4px; font-size:14px;" ${!isReady ? 'disabled' : ''}>🚀 Generate Tree Report</button>
-
-                <div id="status-text" style="margin-top:10px; font-size:12px; font-weight:bold; text-align:center; color:#2c3e50;"></div>
-                <div id="table-container" style="max-height:300px; overflow:auto; margin-top:10px;"></div>
-                <button id="export-btn" style="display:none; width:100%; background:#27ae60; color:white; border:none; padding:10px; margin-top:10px; font-weight:bold; border-radius:4px; font-size:14px;">📥 Download Excel</button>
+                <div style="padding:10px; overflow-y:auto; flex:1; display:flex; flex-direction:column;">
+                    ${filterHtml}
+                    <button id="gen-btn" style="width:100%; background:${isReady ? '#8e44ad' : '#ccc'}; color:white; border:none; padding:8px; cursor:${isReady ? 'pointer' : 'not-allowed'}; font-weight:bold; border-radius:4px; font-size:13px; flex-shrink:0;" ${!isReady ? 'disabled' : ''}>🚀 Generate Tree Report</button>
+                    <div id="status-text" style="margin-top:8px; font-size:12px; font-weight:bold; text-align:center; color:#2c3e50; min-height:16px;"></div>
+                    <div id="table-container" style="overflow-y:auto; margin-top:8px; flex:1; max-height:55vh;"></div>
+                    <button id="export-btn" style="display:none; width:100%; background:#27ae60; color:white; border:none; padding:8px; margin-top:8px; font-weight:bold; border-radius:4px; font-size:13px; flex-shrink:0;">📥 Download Excel</button>
+                </div>
             `;
             document.body.appendChild(panel);
+
+            // 🌟 Make header draggable just like the other two modules
+            let isDraggingMem = false, initialXMem, initialYMem;
+            const memHeader = document.getElementById('mem-report-header');
+            if (memHeader) {
+                memHeader.addEventListener('mousedown', (e) => {
+                    if (e.target.id === 'resync-btn' || e.target.id === 'close-panel-btn') return;
+                    let rect = panel.getBoundingClientRect();
+                    initialXMem = e.clientX - rect.left;
+                    initialYMem = e.clientY - rect.top;
+                    isDraggingMem = true;
+                });
+                document.addEventListener('mouseup', () => { isDraggingMem = false; });
+                document.addEventListener('mousemove', (e) => {
+                    if (isDraggingMem) {
+                        e.preventDefault();
+                        panel.style.left = (e.clientX - initialXMem) + 'px';
+                        panel.style.top = (e.clientY - initialYMem) + 'px';
+                        panel.style.transform = 'none'; 
+                    }
+                });
+            }
 
             document.getElementById('resync-btn').onclick = () => {
                 isSyncing = true;
