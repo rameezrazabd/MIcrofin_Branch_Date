@@ -15,7 +15,7 @@ try {
 (function checkAppUpdate() {
     const CURRENT_VERSION = "1.3"; // বর্তমান অ্যাপ ভার্সন
     
-    // ⚠️ নিচে YOUR_USERNAME এর জায়গায় আপনার গিটহাবের আসল ইউজারনেম বসিয়ে দিন 
+    // ⚠️ নিচে YOUR_USERNAME এর জায়গায় আপনার গিটহাবের আসল ইউজারনেম বসিয়ে দিন (যেমন: rameez123 ইত্যাদি)
     const UPDATE_JSON_URL = "https://raw.githubusercontent.com/rameezrazabd/Microfin_Branch_Date/main/update.json"; 
 
     setTimeout(() => {
@@ -116,7 +116,7 @@ try {
             document.body.appendChild(toast);
         }
         toast.style.background = '#f39c12';
-        toast.innerHTML = '<span>⚙️ Central System Sync: Scanning Zones, Areas & Branches...</span>';
+        toast.innerHTML = '<span>⚙️ Branch/Area/Zone Sync: Scanning Zones, Areas & Branches...</span>';
 
         const iframe = document.createElement('iframe');
         iframe.style.cssText = 'position:fixed; top:0px; left:-9999px; width:1200px; height:800px; border:none; z-index:-1;';
@@ -284,7 +284,7 @@ try {
                         localStorage.setItem('microfin_sync_status', 'DONE');
 
                         toast.style.background = '#27ae60';
-                        toast.innerHTML = `<span>✅ Central Sync Complete! (${branches.length} Branches Ready)</span>`;
+                        toast.innerHTML = `<span>✅ Branch/Area/Zone Sync Complete! (${branches.length} Branches Ready)</span>`;
                         setTimeout(() => toast.remove(), 2500);
                         window.dispatchEvent(new CustomEvent('mf_central_sync_completed'));
                         if (callback) callback(true);
