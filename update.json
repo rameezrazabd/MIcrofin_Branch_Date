@@ -1,6 +1,6 @@
 {
-  "version": "1.1",
-  "title": "নতুন আপডেট এসেছে! পিছিয়ে থাকা ব্রাঞ্চ দেখা যাবে আলাদা ট্যাবে",
+  "version": "1.3",
+  "title": "নতুন আপডেট এসেছে! পিছিয়ে থাকা ব্রাঞ্চ দেখা যাবে আলাদা ট্যাবে, মেম্বার যাচাই রিপোর্ট দেখা যাবে",
   "message": "নতুন ফিচার পেতে এখনই আপডেট করে নিন!",
   "download_url": "https://github.com/rameezrazabd/Microfin_Branch_Date/releases/download/latest/MicrofinApp-Latest.apk",
   "force_update": false
